@@ -4,11 +4,12 @@ import os
 from datetime import datetime, timezone
 from typing import Callable, Optional
 
-import google.generativeai as genai
+import aiohttp
 
 logger = logging.getLogger(__name__)
 
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash-lite")
+GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/models"
 MAX_TOKENS = 200
 CONFIDENCE_THRESHOLD = 0.75
 SKIP_CATEGORIES = {"PERSONAL_NOISE"}
@@ -30,15 +31,7 @@ SYSTEM_PROMPT = (
 
 class Classifier:
     def __init__(self, api_key: str, on_result: Optional[Callable] = None):
-        genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel(
-            GEMINI_MODEL,
-            system_instruction=SYSTEM_PROMPT,
-            generation_config=genai.GenerationConfig(
-                max_output_tokens=MAX_TOKENS,
-                temperature=0.0,
-            ),
-        )
+        self.api_key = api_key
         self.on_result = on_result
 
     async def classify(self, post: dict) -> Optional[dict]:
@@ -71,15 +64,29 @@ class Classifier:
         return result
 
     async def _call_gemini(self, content: str, is_retry: bool = False) -> Optional[dict]:
+        url = f"{GEMINI_BASE}/{GEMINI_MODEL}:generateContent?key={self.api_key}"
+        payload = {
+            "system_instruction": {"parts": [{"text": SYSTEM_PROMPT}]},
+            "contents": [{"role": "user", "parts": [{"text": content}]}],
+            "generationConfig": {
+                "maxOutputTokens": MAX_TOKENS,
+                "temperature": 0.0,
+            },
+        }
         try:
-            response = await self.model.generate_content_async(content)
-            raw = response.text.strip()
-            # Strip markdown fences if Gemini wraps the response
+            async with aiohttp.ClientSession() as session:
+                async with session.post(url, json=payload, timeout=aiohttp.ClientTimeout(total=30)) as resp:
+                    resp.raise_for_status()
+                    data = await resp.json()
+
+            raw = data["candidates"][0]["content"]["parts"][0]["text"].strip()
+            # Strip markdown fences if present
             if raw.startswith("```"):
                 raw = raw.split("```")[1]
                 if raw.startswith("json"):
                     raw = raw[4:]
             return json.loads(raw.strip())
+
         except json.JSONDecodeError as exc:
             if not is_retry:
                 logger.warning(
