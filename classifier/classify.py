@@ -4,13 +4,12 @@ import os
 from datetime import datetime, timezone
 from typing import Callable, Optional
 
-import anthropic
+import google.generativeai as genai
 
 logger = logging.getLogger(__name__)
 
-CLAUDE_MODEL = os.getenv("CLAUDE_MODEL", "claude-sonnet-4-6")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
 MAX_TOKENS = 200
-TEMPERATURE = 0.0
 CONFIDENCE_THRESHOLD = 0.75
 SKIP_CATEGORIES = {"PERSONAL_NOISE"}
 
@@ -31,12 +30,20 @@ SYSTEM_PROMPT = (
 
 class Classifier:
     def __init__(self, api_key: str, on_result: Optional[Callable] = None):
-        self.client = anthropic.AsyncAnthropic(api_key=api_key)
+        genai.configure(api_key=api_key)
+        self.model = genai.GenerativeModel(
+            GEMINI_MODEL,
+            system_instruction=SYSTEM_PROMPT,
+            generation_config=genai.GenerationConfig(
+                max_output_tokens=MAX_TOKENS,
+                temperature=0.0,
+            ),
+        )
         self.on_result = on_result
 
     async def classify(self, post: dict) -> Optional[dict]:
         post_id = post.get("post_id", "unknown")
-        result = await self._call_claude(post.get("content", ""))
+        result = await self._call_gemini(post.get("content", ""))
 
         if result is None:
             logger.error(
@@ -63,17 +70,16 @@ class Classifier:
 
         return result
 
-    async def _call_claude(self, content: str, is_retry: bool = False) -> Optional[dict]:
+    async def _call_gemini(self, content: str, is_retry: bool = False) -> Optional[dict]:
         try:
-            response = await self.client.messages.create(
-                model=CLAUDE_MODEL,
-                max_tokens=MAX_TOKENS,
-                temperature=TEMPERATURE,
-                system=SYSTEM_PROMPT,
-                messages=[{"role": "user", "content": content}],
-            )
-            raw = response.content[0].text.strip()
-            return json.loads(raw)
+            response = await self.model.generate_content_async(content)
+            raw = response.text.strip()
+            # Strip markdown fences if Gemini wraps the response
+            if raw.startswith("```"):
+                raw = raw.split("```")[1]
+                if raw.startswith("json"):
+                    raw = raw[4:]
+            return json.loads(raw.strip())
         except json.JSONDecodeError as exc:
             if not is_retry:
                 logger.warning(
@@ -81,23 +87,16 @@ class Classifier:
                     datetime.now(timezone.utc).isoformat(),
                     exc,
                 )
-                return await self._call_claude(content, is_retry=True)
+                return await self._call_gemini(content, is_retry=True)
             logger.error(
                 "[%s] JSON parse failed after retry: %s",
                 datetime.now(timezone.utc).isoformat(),
                 exc,
             )
             return None
-        except anthropic.APIError as exc:
-            logger.error(
-                "[%s] Claude API error: %s",
-                datetime.now(timezone.utc).isoformat(),
-                exc,
-            )
-            return None
         except Exception as exc:
             logger.error(
-                "[%s] Unexpected classifier error: %s",
+                "[%s] Gemini API error: %s",
                 datetime.now(timezone.utc).isoformat(),
                 exc,
             )

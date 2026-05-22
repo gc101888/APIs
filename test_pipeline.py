@@ -5,7 +5,7 @@ without connecting to the live WebSocket.
 Usage:
     python test_pipeline.py
 
-Requires:  ANTHROPIC_API_KEY (mandatory)
+Requires:  GEMINI_API_KEY (mandatory — free at aistudio.google.com)
 Optional:  SUPABASE_URL + SUPABASE_KEY  (skipped if absent)
            TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID  (skipped if absent)
 """
@@ -104,8 +104,8 @@ async def run_test_post(post: dict, classifier, trader, supabase, telegram) -> d
 
 
 async def main() -> None:
-    if not os.getenv("ANTHROPIC_API_KEY"):
-        logger.critical("ANTHROPIC_API_KEY is required")
+    if not os.getenv("GEMINI_API_KEY"):
+        logger.critical("GEMINI_API_KEY is required")
         sys.exit(1)
 
     # Optional integrations — silently skip if not configured
@@ -134,7 +134,7 @@ async def main() -> None:
     from classifier.classify import Classifier
     from signals.paper_trade import PaperTrader
 
-    classifier = Classifier(api_key=os.environ["ANTHROPIC_API_KEY"])
+    classifier = Classifier(api_key=os.environ["GEMINI_API_KEY"])
     trader = PaperTrader(supabase_logger=supabase, telegram=telegram)
 
     logger.info("")

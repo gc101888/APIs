@@ -18,7 +18,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 REQUIRED_ENV = [
-    "ANTHROPIC_API_KEY",
+    "GEMINI_API_KEY",
     "SUPABASE_URL",
     "SUPABASE_KEY",
     "TELEGRAM_BOT_TOKEN",
@@ -74,7 +74,7 @@ async def main() -> None:
             await trader.process_signal(post, result)
 
     classifier = Classifier(
-        api_key=os.environ["ANTHROPIC_API_KEY"],
+        api_key=os.environ["GEMINI_API_KEY"],
         on_result=on_classification,
     )
 
