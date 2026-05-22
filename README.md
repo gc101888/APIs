@@ -3,8 +3,10 @@
 Automated trading signal detection and paper trading system — Phase 1.
 
 Monitors @realDonaldTrump Truth Social posts in real-time, classifies them
-using Claude AI, and fires paper trades with calculated entry/stop/target levels.
+using Google Gemini AI, and fires paper trades with calculated entry/stop/target levels.
 No broker connection. No real money. Signals and hypothetical P&L tracking only.
+
+**Live dashboard:** https://gc101888.github.io/APIs/
 
 ---
 
@@ -17,8 +19,8 @@ No broker connection. No real money. Signals and hypothetical P&L tracking only.
 └────────────────────────────────────────────────────────────────┘
 
   Truth Social                                       Supabase
-  WebSocket Feed ──► Claude Classifier ──────────►  posts table
-  wss://...          (Sonnet 4.6)                    classifications table
+  WebSocket Feed ──► Gemini Classifier ──────────►  posts table
+  wss://...          (2.5-flash-lite)                classifications table
   account filter     conf < 0.75 → skip
        │             PERSONAL_NOISE → skip
        │             conf >= 0.75 → trade
@@ -28,13 +30,13 @@ No broker connection. No real money. Signals and hypothetical P&L tracking only.
        │             yfinance prices ─────────────►  signals table
        │             entry / stop / target
        │                   │
-       │                   ├──► Telegram: 🚨 SIGNAL FIRED
+       │                   ├──► Telegram: 🚨 SIGNAL + TradingView link
        │                   │
-       │             [+2 hours]
+       │             [every 5 min, max 4hr]
        │                   │
-       │             Outcome Check                   Supabase
+       │             Outcome Monitor                 Supabase
        │             re-fetch price ──────────────►  update outcome
-       │             WIN / LOSS / PARTIAL
+       │             TARGET_HIT / STOP_HIT / TIME_STOP
        │                   │
        │                   └──► Telegram: ✅/❌/⏰ OUTCOME
        │
@@ -43,6 +45,7 @@ No broker connection. No real money. Signals and hypothetical P&L tracking only.
                             🔍 CLASSIFIED
 
   Daily 17:00 UTC ──► Query Supabase ──► Telegram: 📊 DAILY SUMMARY
+  GitHub Pages ──────────────────────────────────► Live dashboard UI
 ```
 
 ---
@@ -50,7 +53,7 @@ No broker connection. No real money. Signals and hypothetical P&L tracking only.
 ## Requirements
 
 - Python 3.12+
-- Anthropic API key
+- Google Gemini API key (free — aistudio.google.com)
 - Supabase project (URL + anon key)
 - Telegram bot token + chat ID
 
@@ -110,12 +113,21 @@ create table signals (
   entry_price  float,
   stop_price   float,
   target_price float,
-  price_2hr    float,
-  outcome      text,
+  exit_price   float,
+  outcome      text,   -- TARGET_HIT | STOP_HIT | TIME_STOP
   pnl_pct      float,
   created_at   timestamptz default now(),
   resolved_at  timestamptz
 );
+
+-- Enable anonymous read access for the dashboard
+alter table posts          enable row level security;
+alter table classifications enable row level security;
+alter table signals        enable row level security;
+
+create policy "anon read posts"           on posts          for select using (true);
+create policy "anon read classifications" on classifications for select using (true);
+create policy "anon read signals"         on signals        for select using (true);
 ```
 
 ---
@@ -190,8 +202,12 @@ journalctl -u trading-engine -f
 
 Fixed 1:3 risk/reward on every signal:
 - **Stop**: ±0.5% from entry
-- **Target**: ±1.5% from entry
-- **Outcome check**: 2 hours after signal
+- **Target**: ±1.5% from entry  
+- **Risk/reward**: 1:3
+- **Monitoring**: poll every 5 minutes, 4-hour time stop
+- **Outcomes**: `TARGET_HIT` | `STOP_HIT` | `TIME_STOP`
+
+All outcomes are **hypothetical** — no real account connected.
 
 ---
 

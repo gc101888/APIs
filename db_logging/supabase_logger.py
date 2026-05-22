@@ -113,7 +113,7 @@ class SupabaseLogger:
     async def update_signal_outcome(
         self,
         signal_id: str,
-        price_2hr: float,
+        exit_price: float,
         outcome: str,
         pnl_pct: float,
         resolved_at: datetime,
@@ -123,7 +123,7 @@ class SupabaseLogger:
                 lambda: self.client.table("signals")
                 .update(
                     {
-                        "price_2hr": price_2hr,
+                        "exit_price": exit_price,
                         "outcome": outcome,
                         "pnl_pct": pnl_pct,
                         "resolved_at": resolved_at.isoformat(),
@@ -167,8 +167,8 @@ class SupabaseLogger:
                 .execute()
             )
             rows = signals_res.data or []
-            wins = sum(1 for r in rows if r.get("outcome") == "WIN")
-            losses = sum(1 for r in rows if r.get("outcome") == "LOSS")
+            wins = sum(1 for r in rows if r.get("outcome") == "TARGET_HIT")
+            losses = sum(1 for r in rows if r.get("outcome") == "STOP_HIT")
             open_count = sum(1 for r in rows if r.get("outcome") is None)
             total_pnl = round(sum(r.get("pnl_pct") or 0.0 for r in rows), 2)
 

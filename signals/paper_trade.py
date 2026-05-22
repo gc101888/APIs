@@ -12,11 +12,49 @@ INSTRUMENT_MAP = {
     "ES": "ES=F",
     "GLD": "GLD",
     "BTC": "BTC-USD",
+    "SPY": "SPY",
+    "QQQ": "QQQ",
+    "AAPL": "AAPL",
+    "PLTR": "PLTR",
+    "TSLA": "TSLA",
+    "NVDA": "NVDA",
+    "MSFT": "MSFT",
+    "AMZN": "AMZN",
+    "META": "META",
+    "DJT": "DJT",
 }
 
-STOP_PCT = 0.005    # 0.5%
-TARGET_PCT = 0.015  # 1.5%
-OUTCOME_DELAY_HOURS = 2
+TV_SYMBOL_MAP = {
+    "NQ": "CME_MINI:NQ1!",
+    "ES": "CME_MINI:ES1!",
+    "GLD": "AMEX:GLD",
+    "BTC": "BINANCE:BTCUSDT",
+    "SPY": "AMEX:SPY",
+    "QQQ": "NASDAQ:QQQ",
+    "AAPL": "NASDAQ:AAPL",
+    "PLTR": "NASDAQ:PLTR",
+    "TSLA": "NASDAQ:TSLA",
+    "NVDA": "NASDAQ:NVDA",
+    "MSFT": "NASDAQ:MSFT",
+    "AMZN": "NASDAQ:AMZN",
+    "META": "NASDAQ:META",
+    "DJT": "NASDAQ:DJT",
+}
+
+STOP_PCT = 0.005     # 0.5%
+TARGET_PCT = 0.015   # 1.5%
+TIME_STOP_HOURS = 4  # exit after 4 hours if neither stop nor target hit
+CHECK_INTERVAL_SECS = 300  # poll every 5 minutes
+
+# Outcome labels — honest: we are NOT in a real trade
+OUTCOME_TARGET_HIT = "TARGET_HIT"
+OUTCOME_STOP_HIT = "STOP_HIT"
+OUTCOME_TIME_STOP = "TIME_STOP"
+
+
+def get_tradingview_url(instrument: str) -> str:
+    sym = TV_SYMBOL_MAP.get(instrument.upper(), instrument.upper())
+    return f"https://www.tradingview.com/chart/?symbol={sym}"
 
 
 def _resolve_ticker(instrument: str) -> str:
@@ -27,11 +65,9 @@ def _fetch_price_sync(instrument: str) -> Optional[float]:
     ticker_sym = _resolve_ticker(instrument)
     try:
         t = yf.Ticker(ticker_sym)
-        # fast_info is the lowest-latency price available
         price = t.fast_info.last_price
         if price and price > 0:
             return float(price)
-        # Fallback to historical data
         hist = t.history(period="1d", interval="1m", auto_adjust=True)
         if not hist.empty:
             return float(hist["Close"].iloc[-1])
@@ -124,66 +160,65 @@ class PaperTrader:
             await self.telegram.send_signal(post, classification, signal)
 
         asyncio.create_task(
-            self._schedule_outcome(signal, signal_id, signal_time)
+            self._monitor_outcome(signal, signal_id, signal_time)
         )
 
-    async def _schedule_outcome(
+    async def _monitor_outcome(
         self, signal: dict, signal_id: Optional[str], signal_time: datetime
     ) -> None:
-        await asyncio.sleep(OUTCOME_DELAY_HOURS * 3600)
-        await self._check_outcome(signal, signal_id, signal_time)
-
-    async def _check_outcome(
-        self, signal: dict, signal_id: Optional[str], signal_time: datetime
-    ) -> None:
+        """Poll every CHECK_INTERVAL_SECS until stop/target hit or TIME_STOP_HOURS elapsed."""
         instrument = signal["instrument"]
         direction = signal["direction"]
         entry = signal["entry_price"]
         stop = signal["stop_price"]
         target = signal["target_price"]
+        deadline = signal_time + timedelta(hours=TIME_STOP_HOURS)
 
-        price_2hr = await asyncio.to_thread(_fetch_price_sync, instrument)
-        if price_2hr is None:
-            logger.error(
-                "[%s] Cannot fetch outcome price for %s",
-                datetime.now(timezone.utc).isoformat(),
-                instrument,
-            )
-            return
+        while True:
+            await asyncio.sleep(CHECK_INTERVAL_SECS)
+            now = datetime.now(timezone.utc)
 
-        if direction == "BUY":
-            if price_2hr >= target:
-                outcome = "WIN"
-            elif price_2hr <= stop:
-                outcome = "LOSS"
-            else:
-                outcome = "PARTIAL"
-            pnl_pct = round((price_2hr - entry) / entry * 100, 3)
-        else:
-            if price_2hr <= target:
-                outcome = "WIN"
-            elif price_2hr >= stop:
-                outcome = "LOSS"
-            else:
-                outcome = "PARTIAL"
-            pnl_pct = round((entry - price_2hr) / entry * 100, 3)
+            current_price = await asyncio.to_thread(_fetch_price_sync, instrument)
+            if current_price is None:
+                logger.warning(
+                    "[%s] Price unavailable for %s during outcome check — will retry",
+                    now.isoformat(), instrument,
+                )
+                continue
 
-        resolved_at = datetime.now(timezone.utc)
-        duration = resolved_at - signal_time
+            if direction == "BUY":
+                pnl_pct = round((current_price - entry) / entry * 100, 3)
+                if current_price >= target:
+                    outcome = OUTCOME_TARGET_HIT
+                elif current_price <= stop:
+                    outcome = OUTCOME_STOP_HIT
+                elif now >= deadline:
+                    outcome = OUTCOME_TIME_STOP
+                else:
+                    continue
+            else:  # SELL
+                pnl_pct = round((entry - current_price) / entry * 100, 3)
+                if current_price <= target:
+                    outcome = OUTCOME_TARGET_HIT
+                elif current_price >= stop:
+                    outcome = OUTCOME_STOP_HIT
+                elif now >= deadline:
+                    outcome = OUTCOME_TIME_STOP
+                else:
+                    continue
 
-        logger.info(
-            "[%s] Outcome: %s %s pnl=%.3f%% price_2hr=%.4f",
-            resolved_at.isoformat(),
-            instrument,
-            outcome,
-            pnl_pct,
-            price_2hr,
-        )
-
-        if self.supabase and signal_id:
-            await self.supabase.update_signal_outcome(
-                signal_id, price_2hr, outcome, pnl_pct, resolved_at
+            logger.info(
+                "[%s] Outcome: %s %s → %s  pnl=%.3f%%  price=%.4f",
+                now.isoformat(), instrument, direction, outcome, pnl_pct, current_price,
             )
 
-        if self.telegram:
-            await self.telegram.send_outcome(signal, outcome, pnl_pct, duration)
+            if self.supabase and signal_id:
+                await self.supabase.update_signal_outcome(
+                    signal_id, current_price, outcome, pnl_pct, now
+                )
+
+            if self.telegram:
+                duration = now - signal_time
+                await self.telegram.send_outcome(signal, outcome, pnl_pct, duration)
+
+            break
