@@ -480,11 +480,9 @@ Simplicity and consistency. A 1:3 R/R means the system only needs to be right ~2
 ```bash
 # 1. SSH into your VPS as root
 
-# 2. Run setup script
-curl -O https://raw.githubusercontent.com/gc101888/APIs/main/deploy/setup.sh
-chmod +x setup.sh
-./setup.sh
-# Creates: trading user, /opt/trading-engine/, venv, installs deps
+# 2. One command to set everything up
+curl -fsSL https://raw.githubusercontent.com/gc101888/APIs/main/deploy/setup.sh | bash
+# Creates: trading user, /opt/trading-engine/, venv, installs all deps
 
 # 3. Copy .env with your credentials
 nano /opt/trading-engine/.env

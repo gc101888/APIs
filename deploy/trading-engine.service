@@ -1,6 +1,6 @@
 [Unit]
 Description=Trading Engine — Automated Signal Detection (Phase 1)
-Documentation=https://github.com/gc101888/trading-engine
+Documentation=https://github.com/gc101888/APIs
 After=network-online.target
 Wants=network-online.target
 

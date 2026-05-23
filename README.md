@@ -64,8 +64,8 @@ No broker connection. No real money. Signals and hypothetical P&L tracking only.
 ### 1. Clone and install
 
 ```bash
-git clone https://github.com/gc101888/trading-engine.git
-cd trading-engine
+git clone https://github.com/gc101888/APIs.git
+cd APIs
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
@@ -148,7 +148,7 @@ Expected results:
 | PLTR mention | STOCK_MENTION | Signal fired |
 | Happy Tuesday | PERSONAL_NOISE | Skipped |
 
-> Requires `ANTHROPIC_API_KEY`. Supabase and Telegram are optional for test mode.
+> Requires `GEMINI_API_KEY`. Supabase and Telegram are optional for test mode.
 
 ---
 
@@ -163,15 +163,17 @@ python main.py
 ## Deploying to VPS (Ubuntu 24)
 
 ```bash
-# On your VPS as root:
-curl -O https://raw.githubusercontent.com/gc101888/trading-engine/main/deploy/setup.sh
-chmod +x setup.sh
-./setup.sh
+# On your VPS as root — one command does everything:
+curl -fsSL https://raw.githubusercontent.com/gc101888/APIs/main/deploy/setup.sh | bash
 
-# Edit the env file with your API keys:
+# Fill in your API keys (script will prompt you if empty):
 nano /opt/trading-engine/.env
 
-# Start the service:
+# Run the test pipeline to confirm everything works:
+cd /opt/trading-engine
+sudo -u trading .venv/bin/python test_pipeline.py
+
+# Start the live engine:
 systemctl start trading-engine
 systemctl status trading-engine
 
