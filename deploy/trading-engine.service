@@ -1,0 +1,31 @@
+[Unit]
+Description=Trading Engine — Automated Signal Detection (Phase 1)
+Documentation=https://github.com/gc101888/APIs
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=trading
+Group=trading
+WorkingDirectory=/opt/trading-engine
+ExecStart=/opt/trading-engine/.venv/bin/python main.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=trading-engine
+EnvironmentFile=/opt/trading-engine/.env
+
+# Security hardening
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/opt/trading-engine
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectControlGroups=yes
+
+[Install]
+WantedBy=multi-user.target
