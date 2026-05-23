@@ -645,8 +645,8 @@
       <div class="s-card-head">
         Live Chart
         <div class="sym-tabs" id="sym-tabs">
-          <button class="sym-btn on" onclick="switchSym('CME_MINI:NQ1!', 'NQ', this)">NQ</button>
-          <button class="sym-btn" onclick="switchSym('CME_MINI:ES1!', 'ES', this)">ES</button>
+          <button class="sym-btn on" onclick="switchSym('NASDAQ:QQQ', 'NQ', this)">NQ</button>
+          <button class="sym-btn" onclick="switchSym('AMEX:SPY', 'ES', this)">ES</button>
           <button class="sym-btn" onclick="switchSym('BINANCE:BTCUSDT', 'BTC', this)">BTC</button>
           <button class="sym-btn" onclick="switchSym('AMEX:GLD', 'GLD', this)">GLD</button>
         </div>
@@ -673,7 +673,7 @@
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhobmtvanZ0ZWNzaWdob215YnlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzODgzNDEsImV4cCI6MjA5NDk2NDM0MX0.t6-LKo2zYi3wSt62jirkB3f1y0C81yX6eWKX4jZpOnc';
 
   const TV_MAP = {
-    NQ: 'CME_MINI:NQ1!', ES: 'CME_MINI:ES1!',
+    NQ: 'NASDAQ:QQQ', ES: 'AMEX:SPY',
     BTC: 'BINANCE:BTCUSDT', GLD: 'AMEX:GLD',
     SPY: 'AMEX:SPY', QQQ: 'NASDAQ:QQQ',
     AAPL: 'NASDAQ:AAPL', PLTR: 'NASDAQ:PLTR',
@@ -926,7 +926,7 @@
   }
 
   // ─── TRADINGVIEW CHART ───
-  let currentSym = 'CME_MINI:NQ1!';
+  let currentSym = 'NASDAQ:QQQ';
 
   function renderChart(sym) {
     const wrap = document.getElementById('chart-wrap');
