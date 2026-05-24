@@ -155,6 +155,17 @@
     .monitor-label { font-size: 11px; color: var(--text-2); text-align: center; line-height: 1.5; }
     .monitor-label strong { color: var(--accent); }
     .monitor-status { font-size: 11px; color: var(--text-2); text-align: center; margin-top: 6px; }
+    .refresh-btn {
+      width: 100%; margin-top: 10px;
+      padding: 7px; border-radius: 8px;
+      font-size: 12px; font-weight: 600;
+      color: var(--accent); background: var(--accent-dim);
+      border: 1px solid rgba(29,155,240,0.25);
+      cursor: pointer; transition: all 0.15s; display: flex;
+      align-items: center; justify-content: center; gap: 5px;
+    }
+    .refresh-btn:hover:not(:disabled) { background: rgba(29,155,240,0.22); }
+    .refresh-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
     /* ── MAIN CONTENT ── */
     .main { flex: 1; min-width: 0; display: flex; }
@@ -449,6 +460,7 @@
       </div>
       <div class="monitor-label">Watching <strong>@realDonaldTrump</strong></div>
       <div class="monitor-status" id="monitor-status">Connecting...</div>
+      <button class="refresh-btn" id="refresh-btn" onclick="manualRefresh()">↻ Refresh now</button>
     </div>
   </nav>
 
@@ -575,7 +587,9 @@
 
   // ── STATE ──
   let posts=[], clsMap={}, sigMap={};
-  let selectedId=null, tab='all', lastLoad=null, pendingNewIds=[];
+  let selectedId=null, tab='all', pendingNewIds=[];
+  let nextRefresh=null, refreshTimer=null;
+  const REFRESH_MS = 30000;
 
   // ── THEME ──
   function applyTheme(t) {
@@ -869,25 +883,42 @@
         if (selectedId) renderRightPanel(selectedId);
       }
 
-      lastLoad=new Date(); updateStatus();
+      scheduleRefresh();
     } catch(e) {
       console.error(e);
       document.getElementById('monitor-status').textContent='Connection error';
+      scheduleRefresh();
     }
   }
 
+  function scheduleRefresh() {
+    if (refreshTimer) clearTimeout(refreshTimer);
+    nextRefresh = Date.now() + REFRESH_MS;
+    refreshTimer = setTimeout(() => loadData(true), REFRESH_MS);
+  }
+
+  async function manualRefresh() {
+    const btn = document.getElementById('refresh-btn');
+    btn.disabled = true;
+    btn.textContent = 'Refreshing…';
+    if (refreshTimer) clearTimeout(refreshTimer);
+    nextRefresh = null;
+    document.getElementById('monitor-status').textContent = 'Refreshing…';
+    await loadData(true);
+    btn.disabled = false;
+    btn.innerHTML = '↻ Refresh now';
+  }
+
   function updateStatus() {
-    if (!lastLoad) return;
-    const s=Math.floor((Date.now()-lastLoad.getTime())/1000);
-    const el=document.getElementById('monitor-status');
-    if (s<5)   el.textContent='Just checked';
-    else if (s<60) el.textContent=`Checked ${s}s ago`;
-    else       el.textContent=`Checked ${Math.floor(s/60)}m ago`;
+    const el = document.getElementById('monitor-status');
+    if (!nextRefresh) return;
+    const sLeft = Math.ceil((nextRefresh - Date.now()) / 1000);
+    if (sLeft <= 0) { el.textContent = 'Refreshing…'; return; }
+    el.textContent = `Next refresh in ${sLeft}s`;
   }
 
   loadData(false);
-  setInterval(()=>loadData(true),30000);
-  setInterval(updateStatus,1000);
+  setInterval(updateStatus, 1000);
 </script>
 </body>
 </html>
