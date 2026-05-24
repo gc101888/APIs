@@ -106,6 +106,12 @@ async def get_alpaca_price(symbol: str) -> Optional[float]:
 
 # ── yfinance fallback ──────────────────────────────────────────────────────
 
+# NQ/ES are futures with no free real-time feed — proxy to ETFs that track them
+FUTURES_PROXY = {
+    "NQ": "QQQ",
+    "ES": "SPY",
+}
+
 YFINANCE_MAP = {
     "NQ": "NQ=F", "ES": "ES=F",
     "GLD": "GLD", "BTC": "BTC-USD",
@@ -143,6 +149,14 @@ async def get_price(instrument: str) -> Optional[float]:
         price = get_binance_price(upper)
         if price:
             logger.debug("Price %s = %.4f (Binance)", upper, price)
+            return price
+
+    # Futures — proxy to ETF for real-time price via Alpaca
+    proxy = FUTURES_PROXY.get(upper)
+    if proxy and _alpaca_key:
+        price = await get_alpaca_price(proxy)
+        if price:
+            logger.debug("Price %s = %.4f via proxy %s (Alpaca)", upper, proxy, price)
             return price
 
     # US stocks — Alpaca

@@ -25,7 +25,18 @@ SYSTEM_PROMPT = (
     '  "direction": "one of [BUY, SELL, NONE]",\n'
     '  "instruments": "array of suggested instruments to trade e.g. [NQ, ES, GLD, BTC, AAPL]",\n'
     '  "reasoning": "one sentence max explanation"\n'
-    "}"
+    "}\n\n"
+    "Category guidance — use these as your default unless the post clearly contradicts them:\n"
+    "TARIFF_ESCALATION: SELL ES, NQ (risk-off)\n"
+    "TARIFF_ROLLBACK: BUY ES, NQ (relief rally)\n"
+    "TRADE_DEAL: BUY ES, NQ\n"
+    "FED_CRITICISM: BUY GLD, BTC (dollar distrust / inflation hedge)\n"
+    "CRYPTO_ENDORSEMENT: BUY BTC\n"
+    "STOCK_MENTION: BUY the mentioned ticker\n"
+    "GEOPOLITICAL: BUY GLD (safe haven), SELL ES (risk-off)\n"
+    "ENERGY_POLICY: use judgment — oil/gas expansion = BUY energy stocks\n"
+    "DEFENSE_POLICY: BUY defense stocks if named, else NONE\n"
+    "PERSONAL_NOISE: NONE, no instruments\n"
 )
 
 
