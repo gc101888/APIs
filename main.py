@@ -53,8 +53,12 @@ async def main() -> None:
     from alerts.telegram import TelegramAlerter
     from classifier.classify import Classifier
     from db_logging.supabase_logger import SupabaseLogger
+    from feeds.price_feed import start_binance_stream
     from feeds.truthsocial_ws import TruthSocialFeed
     from signals.paper_trade import PaperTrader
+
+    start_binance_stream()
+    logger.info("Binance price stream started")
 
     supabase = SupabaseLogger(
         url=os.environ["SUPABASE_URL"],
