@@ -155,17 +155,20 @@
     @keyframes sweep { to { transform: rotate(360deg); } }
     .monitor-label { font-size: 11px; color: var(--text-2); text-align: center; line-height: 1.5; }
     .monitor-label strong { color: var(--accent); }
-    .monitor-status { font-size: 11px; color: var(--text-2); text-align: center; margin-top: 6px; }
+    .monitor-status { font-size: 12px; font-weight: 700; text-align: center; margin-top: 8px; }
+    .monitor-sub { font-size: 10px; color: var(--text-2); text-align: center; margin-top: 3px; }
+    @keyframes scan-pulse { 0%,100%{opacity:1} 50%{opacity:0.35} }
+    .scan-pulse { animation: scan-pulse 2s ease-in-out infinite; }
     .refresh-btn {
       width: 100%; margin-top: 10px;
       padding: 7px; border-radius: 8px;
-      font-size: 12px; font-weight: 600;
-      color: var(--accent); background: var(--accent-dim);
-      border: 1px solid rgba(29,155,240,0.25);
+      font-size: 11px; font-weight: 600;
+      color: var(--text-2); background: transparent;
+      border: 1px solid var(--border);
       cursor: pointer; transition: all 0.15s; display: flex;
       align-items: center; justify-content: center; gap: 5px;
     }
-    .refresh-btn:hover:not(:disabled) { background: rgba(29,155,240,0.22); }
+    .refresh-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
     .refresh-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
     /* ── MAIN CONTENT ── */
@@ -461,7 +464,8 @@
       </div>
       <div class="monitor-label">Watching <strong>@realDonaldTrump</strong></div>
       <div class="monitor-status" id="monitor-status">Connecting…</div>
-      <button class="refresh-btn" id="refresh-btn" onclick="manualRefresh()">↻ Refresh now</button>
+      <div class="monitor-sub" id="monitor-sub"></div>
+      <button class="refresh-btn" id="refresh-btn" onclick="manualRefresh()">↻ Force refresh</button>
     </div>
   </nav>
 
@@ -925,15 +929,15 @@
   }
 
   function updateStatus() {
-    const el = document.getElementById('monitor-status');
+    const statusEl = document.getElementById('monitor-status');
+    const subEl    = document.getElementById('monitor-sub');
     if (realtimeOk) {
-      el.innerHTML = '<span style="color:var(--green)">● Live</span>';
-      return;
+      statusEl.innerHTML = '<span style="color:var(--green)" class="scan-pulse">● Live</span>';
+      subEl.textContent  = posts.length ? `${posts.length} posts tracked` : 'Scanning Truth Social…';
+    } else {
+      statusEl.innerHTML = '<span style="color:var(--gold)">◌ Reconnecting…</span>';
+      subEl.textContent  = 'Waiting for connection';
     }
-    if (!nextRefresh) return;
-    const sLeft = Math.ceil((nextRefresh - Date.now()) / 1000);
-    if (sLeft <= 0) { el.textContent = 'Refreshing…'; return; }
-    el.textContent = `Next refresh in ${sLeft}s`;
   }
 
   loadData(false);
