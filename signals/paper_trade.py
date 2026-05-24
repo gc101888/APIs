@@ -3,7 +3,7 @@ import logging
 from datetime import datetime, timezone, timedelta
 from typing import Optional
 
-import yfinance as yf
+from feeds.price_feed import get_price, start_binance_stream
 
 logger = logging.getLogger(__name__)
 
@@ -121,7 +121,7 @@ class PaperTrader:
             asyncio.create_task(self._fire_signal(post, classification, instrument))
 
     async def _fire_signal(self, post: dict, classification: dict, instrument: str) -> None:
-        entry_price = await asyncio.to_thread(_fetch_price_sync, instrument)
+        entry_price = await get_price(instrument)
         if entry_price is None:
             logger.error(
                 "[%s] Cannot fetch price for %s — signal skipped",
@@ -178,7 +178,7 @@ class PaperTrader:
             await asyncio.sleep(CHECK_INTERVAL_SECS)
             now = datetime.now(timezone.utc)
 
-            current_price = await asyncio.to_thread(_fetch_price_sync, instrument)
+            current_price = await get_price(instrument)
             if current_price is None:
                 logger.warning(
                     "[%s] Price unavailable for %s during outcome check — will retry",
