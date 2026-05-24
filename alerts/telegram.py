@@ -7,7 +7,7 @@ from telegram.error import TelegramError
 logger = logging.getLogger(__name__)
 
 TV_SYMBOL_MAP = {
-    "NQ": "CME_MINI:NQ1!", "ES": "CME_MINI:ES1!",
+    "NQ": "NASDAQ:QQQ", "ES": "AMEX:SPY",
     "GLD": "AMEX:GLD", "BTC": "BINANCE:BTCUSDT",
     "SPY": "AMEX:SPY", "QQQ": "NASDAQ:QQQ",
     "AAPL": "NASDAQ:AAPL", "PLTR": "NASDAQ:PLTR",

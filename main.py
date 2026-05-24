@@ -72,9 +72,10 @@ async def main() -> None:
 
     async def on_classification(post: dict, result: dict) -> None:
         await supabase.log_classification(post["post_id"], result)
-        await telegram.send_classification(result)
         if classifier.should_trade(result):
             result["trade_fired"] = True
+            await telegram.send_post_detected(post)
+            await telegram.send_classification(result)
             await trader.process_signal(post, result)
 
     classifier = Classifier(
@@ -84,7 +85,6 @@ async def main() -> None:
 
     async def on_post(post: dict) -> None:
         await supabase.log_post(post)
-        await telegram.send_post_detected(post)
         await classifier.classify(post)
 
     feed = TruthSocialFeed(
