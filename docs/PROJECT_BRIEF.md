@@ -10,29 +10,34 @@ Monitors @realDonaldTrump's Truth Social posts in real-time. The moment he posts
 
 **The edge:** Truth Social is the instantaneous source. Reuters and Bloomberg report AFTER Trump posts — by then the price has already moved. We read directly from the source before anyone else.
 
-**Phase 1:** Paper trading only — no real broker connected. All P&L is hypothetical. Designed to prove the signal quality before going live.
+**Phase 1:** Paper trading only — no real broker connected. All P&L is hypothetical. Designed to prove signal quality before going live.
+
+**Future:** Native app (not web). Architecture decisions should keep this in mind.
 
 ---
 
-## Current Status (as of May 2026)
+## Current Status (as of 2026-05-24)
 
-### Done
-- Truth Social WebSocket feed (24/7 monitoring with auto-reconnect)
-- Gemini AI classifier (tested, 3/3 correct at 95% confidence)
-- Paper trader with entry/stop/target calculation
+### Done — fully live
+
+- Truth Social WebSocket feed (24/7 monitoring, auto-reconnect, exponential backoff)
+- Gemini AI classifier (gemini-2.5-flash-lite, direct REST via aiohttp, 3/3 correct at 95%+)
+- Paper trader with entry/stop/target (0.5% stop, 1.5% target, 1:3 R/R)
 - Outcome monitoring loop (every 5 min, 4hr time stop)
-- Supabase database (tables created, RLS configured)
-- Telegram alerts (7 alert types, TradingView deep links)
-- GitHub Pages dashboard (live at gc101888.github.io/APIs/)
-- Real-time price feed: Binance WebSocket (crypto) + Alpaca (stocks) + yfinance fallback
-- VPS deploy script (Railway or Ubuntu VPS)
-- CI fixed (old API list validator disabled)
+- Supabase database (3 tables: posts, classifications, signals — RLS configured)
+- Telegram alerts — fires only on tradeable signals (PERSONAL_NOISE is silent)
+- Real-time price feed: Binance WebSocket (crypto) + Alpaca REST (stocks) + yfinance fallback
+- NQ/ES proxied to QQQ/SPY via Alpaca for real-time prices (yfinance is 15min delayed)
+- Gemini prompt has explicit per-category direction guidance (e.g. GEOPOLITICAL → BUY GLD)
+- **Railway engine deployed and running** (project: blissful-miracle, service: Trading-engine)
+- Binance API keys added to Railway env
+- Dashboard live at gc101888.github.io/APIs/ — X-style UI, dark/light mode
 
 ### Still Needed
-- Add Binance API keys to Railway env vars
-- Sign up for Alpaca (free) and add keys
-- Deploy engine to Railway (not running yet — no signals firing)
-- IBKR paper account for NQ/ES futures prices
+
+- Sign up for Alpaca (free, alpaca.markets) and add ALPACA_API_KEY + ALPACA_API_SECRET to Railway
+- IBKR paper account for real-time NQ/ES futures prices (currently falls back to yfinance 15min delay)
+- Phase 2: connect live broker (IBKR) for real execution
 
 ---
 
@@ -51,40 +56,40 @@ feeds/truthsocial_ws.py
   - Reconnect with backoff [1,2,4,8,16,60]s
          │
          ├──► Supabase: posts table
-         ├──► Telegram: POST DETECTED
          ▼
 classifier/classify.py
   - Google Gemini 2.5-flash-lite (free tier)
-  - Direct REST API via aiohttp (no SDK — bypasses gRPC SSL issues)
+  - Direct REST via aiohttp (no SDK — bypasses gRPC SSL issues)
   - Returns: category, confidence, direction, instruments, reasoning
-  - Confidence < 0.75 → skip
-  - Category = PERSONAL_NOISE → skip
+  - Confidence < 0.75 → skip silently
+  - Category = PERSONAL_NOISE → skip silently
          │
          ├──► Supabase: classifications table
-         ├──► Telegram: CLASSIFIED
+         │
+         │ [Only if should_trade() passes]
+         ├──► Telegram: POST DETECTED + CLASSIFIED
          ▼
 signals/paper_trade.py
   - Fetch entry price via feeds/price_feed.py
   - Calculate stop (±0.5%) and target (±1.5%)
-  - Log signal to Supabase
-  - Alert Telegram with TradingView chart link
-  - Start monitoring loop
          │
          ├──► Supabase: signals table
-         ├──► Telegram: SIGNAL FIRED + TradingView link
+         ├──► Telegram: SIGNAL FIRED + TradingView chart link
          ▼
-Outcome Monitor (asyncio background task)
-  - Poll price every 5 minutes
-  - TARGET_HIT / STOP_HIT / TIME_STOP (4hr)
+Outcome Monitor (asyncio background loop, not one-shot)
+  - Poll price every 5 minutes for up to 4 hours
+  - Reason for loop: one-shot check gives wrong outcome on price whipsaws
+  - TARGET_HIT / STOP_HIT / TIME_STOP (all hypothetical — paper trading)
          │
          ├──► Supabase: update outcome, exit_price, pnl_pct
          └──► Telegram: TARGET HIT / STOP HIT / TIME STOP
 
-Daily 17:00 UTC → Supabase query → Telegram DAILY SUMMARY
+Daily at 17:00 UTC → Supabase query → Telegram DAILY SUMMARY
+Fatal crash → Telegram ERROR
 
 GitHub Pages dashboard (docs/index.html)
-  - Reads Supabase via REST API every 30s
-  - Shows post feed, signals, TradingView charts, stats
+  - Polls Supabase REST API every 30 seconds
+  - X-style layout: sidebar nav, center post feed, right trade panel
 ```
 
 ---
@@ -97,17 +102,19 @@ feeds/price_feed.py — unified get_price(instrument) function
 Priority routing:
 1. Binance WebSocket (instantaneous, runs permanently in background)
    Covers: BTC, ETH, BNB, SOL and any USDT pair
-   Keys: BINANCE_API_KEY, BINANCE_API_SECRET
+   Keys: BINANCE_API_KEY, BINANCE_API_SECRET ← ADDED TO RAILWAY
 
-2. Alpaca REST API (real-time, free tier)
+2. Futures proxy via Alpaca (real-time, free tier)
+   NQ → QQQ, ES → SPY (ETF proxies — CME futures have no free real-time feed)
+   Keys: ALPACA_API_KEY, ALPACA_API_SECRET ← STILL NEEDED
+
+3. Alpaca REST (real-time, free tier)
    Covers: SPY, QQQ, AAPL, PLTR, TSLA, NVDA, MSFT, AMZN, META, DJT, GLD
-   Keys: ALPACA_API_KEY, ALPACA_API_SECRET
 
-3. yfinance (15-min delay fallback, no key needed)
-   Covers: NQ=F, ES=F, and anything else
-   Used when Binance and Alpaca don't have the instrument
+4. yfinance fallback (15-min delay — used when Alpaca not configured)
+   Covers: NQ=F, ES=F, and everything else
 
-Future: IBKR API for real-time NQ/ES futures
+Future: IBKR API for real-time NQ/ES futures (replaces yfinance fallback)
 ```
 
 ---
@@ -117,9 +124,9 @@ Future: IBKR API for real-time NQ/ES futures
 ```
 APIs/
 ├── main.py                     Entry point (production)
-├── test_pipeline.py            Test with 3 simulated posts (no live WS)
+├── test_pipeline.py            Test with 3 simulated posts (no live WebSocket)
 ├── requirements.txt
-├── .env                        All secrets (not committed)
+├── .env                        All secrets (not committed to git)
 ├── .env.example                Template
 │
 ├── feeds/
@@ -127,23 +134,23 @@ APIs/
 │   └── price_feed.py           Unified price feed (Binance/Alpaca/yfinance)
 │
 ├── classifier/
-│   └── classify.py             Gemini AI classifier
+│   └── classify.py             Gemini AI classifier + system prompt
 │
 ├── signals/
-│   └── paper_trade.py          Signal generation + outcome monitoring
+│   └── paper_trade.py          Signal generation + outcome monitoring loop
 │
 ├── alerts/
 │   └── telegram.py             Telegram bot (7 alert types)
 │
 ├── db_logging/
-│   └── supabase_logger.py      Supabase async writer
+│   └── supabase_logger.py      Async Supabase writer (asyncio.to_thread)
 │
 ├── deploy/
 │   ├── setup.sh                Ubuntu 24 VPS one-command setup
 │   └── trading-engine.service  Systemd unit file
 │
 └── docs/
-    ├── index.html              GitHub Pages dashboard UI
+    ├── index.html              Dashboard UI (X-style, dark/light mode)
     └── PROJECT_BRIEF.md        This document
 ```
 
@@ -154,25 +161,27 @@ APIs/
 ```bash
 # Truth Social
 TRUTH_SOCIAL_ACCOUNT_ID=107780257626128497
-TRUTH_SOCIAL_ACCESS_TOKEN=          # optional, leave blank
+TRUTH_SOCIAL_ACCESS_TOKEN=          # optional — public stream works without it
+                                    # Truth Social blocks app registration API
+                                    # Extract from browser DevTools if needed
 
 # Google Gemini (free — aistudio.google.com)
 GEMINI_API_KEY=AIzaSyAlCh3iCve6RFFhsSxl8amFdu6CuN2TVGM
 
-# Supabase (tables already created)
+# Supabase (tables already created, RLS configured)
 SUPABASE_URL=https://hhnkojvtecsighomybyl.supabase.co
-SUPABASE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...  # anon key
+SUPABASE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhobmtvanZ0ZWNzaWdob215YnlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzODgzNDEsImV4cCI6MjA5NDk2NDM0MX0.t6-LKo2zYi3wSt62jirkB3f1y0C81yX6eWKX4jZpOnc
 
 # Telegram
 TELEGRAM_BOT_TOKEN=8638633345:AAFAp2YXnCR7eJrgo4oaxmTr5WxHekk9uBw
 TELEGRAM_CHAT_ID=412222888
 
-# Binance (real-time crypto — read-only key)
-BINANCE_API_KEY=                    # add after generating in Binance app
-BINANCE_API_SECRET=
+# Binance (real-time crypto prices — read-only key) ← ADDED TO RAILWAY
+BINANCE_API_KEY=<in Railway env>
+BINANCE_API_SECRET=<in Railway env>
 
-# Alpaca (real-time US stocks — free, alpaca.markets)
-ALPACA_API_KEY=                     # add after signing up
+# Alpaca (real-time US stocks — free, alpaca.markets) ← STILL NEEDED
+ALPACA_API_KEY=
 ALPACA_API_SECRET=
 
 # System
@@ -238,66 +247,101 @@ create policy "anon read signals"         on signals        for select using (tr
 
 ## Signal Strategy
 
-### Categories & Direction
+### Categories & Direction (set in Gemini system prompt in classifier/classify.py)
 
 | Category | Direction | Instruments |
 |---|---|---|
 | TARIFF_ESCALATION | SELL | ES, NQ |
 | TARIFF_ROLLBACK | BUY | ES, NQ |
 | TRADE_DEAL | BUY | ES, NQ |
-| FED_CRITICISM | BUY | GLD, BTC |
+| FED_CRITICISM | BUY | GLD, BTC (inflation/dollar distrust hedge) |
 | CRYPTO_ENDORSEMENT | BUY | BTC |
 | STOCK_MENTION | BUY | Named ticker |
-| ENERGY_POLICY | varies | ES |
-| DEFENSE_POLICY | varies | ES |
-| GEOPOLITICAL | SELL | GLD, ES |
-| PERSONAL_NOISE | SKIP | — |
+| ENERGY_POLICY | varies | judgment call |
+| DEFENSE_POLICY | varies | defense stocks if named |
+| GEOPOLITICAL | BUY GLD, SELL ES | safe haven + risk-off |
+| PERSONAL_NOISE | SKIP | — (no Telegram alert, no signal) |
+
+**Note:** Direction guidance is embedded in the Gemini system prompt — Gemini makes the final call but defaults to these. The GEOPOLITICAL → BUY GLD fix was applied (original brief had it wrong as SELL GLD).
 
 ### Risk Parameters (fixed 1:3 R/R)
 
+- Confidence threshold: 0.75 minimum to fire
 - Stop: ±0.5% from entry
 - Target: ±1.5% from entry
 - Monitor: every 5 minutes
 - Time stop: 4 hours
 - Outcomes: TARGET_HIT / STOP_HIT / TIME_STOP (all hypothetical)
+- Labels are honest — NOT WIN/LOSS since we're not actually in a trade
 
 ---
 
 ## AI Classifier Detail
 
-- **Model:** gemini-2.5-flash-lite (free tier)
+- **Model:** gemini-2.5-flash-lite (the only free model with quota on this Gemini project)
 - **API:** Direct REST via aiohttp — NOT the Google SDK
-- **Why no SDK:** gRPC SSL fails in sandbox/some VPS environments. Direct REST bypasses this entirely.
+- **Why no SDK:** gRPC SSL fails in Railway sandbox. Direct REST bypasses this entirely.
 - **Endpoint:** `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent`
-- **Temperature:** 0.0 (deterministic)
+- **Temperature:** 0.0 (deterministic output)
 - **Retry:** once on JSON parse failure
-- **Tested:** 3/3 correct classifications at 95%+ confidence
+- **System prompt:** includes per-category direction guidance table
 
 ---
 
-## Dashboard
+## Telegram Alert System
+
+Alerts fire only when a trade signal actually fires (confidence ≥ 0.75, not PERSONAL_NOISE).
+PERSONAL_NOISE and low-confidence posts are completely silent.
+
+| Trigger | Message |
+|---|---|
+| Engine starts | ✅ Trading Engine Online |
+| Signal fires → post detected | 📡 TRUMP POST DETECTED |
+| Signal fires → classification | 🔍 AI CLASSIFICATION + reasoning |
+| Signal fires → trade opened | 🚨 SIGNAL FIRED + entry/stop/target + chart link |
+| Trade resolves | ✅❌⏰ TARGET HIT / STOP HIT / TIME STOP + P&L |
+| Daily at 17:00 UTC | 📊 DAILY SUMMARY |
+| Fatal crash | ⚠️ ERROR |
+
+---
+
+## Dashboard (docs/index.html)
 
 **URL:** https://gc101888.github.io/APIs/
 
-**Tech:** Single HTML file, no framework, vanilla JS + CSS
-- Fetches from Supabase REST API every 30 seconds
-- TradingView mini chart widget (free, real-time): NQ→QQQ, ES→SPY, BTC→BTCUSDT, GLD→GLD
-- Post feed: Trump post + AI classification + signal card + TradingView link
-- Stats bar: total signals, target hits, stop hits, win rate, hypothetical P&L
-- Mobile responsive
+**Design:** X (Twitter) inspired — 3-column layout
 
-**Note:** CME futures symbols (NQ1!, ES1!) require paid TradingView. Using QQQ/SPY as free proxies in the widget. Telegram alerts link directly to the correct futures chart.
+- **Left sidebar:** Home, Following, Analytics nav + dark/light mode toggle + radar animation
+- **Center feed:** Trump posts in X-style cards — "Live Feed" and "Signals Only" tabs
+- **Right panel:** Click any post → shows trade details. Open trade = live chart + entry/stop/target levels. Closed trade = outcome + P&L + chart
+- **Following page:** Account management — follow/unfollow accounts. Trump active, Elon Musk + Jerome Powell shown as coming soon. Followed accounts stored in localStorage and filter the feed/signals
+- **Analytics page:** Full signal stats — signals, wins, losses, open, win rate, P&L, posts tracked
+- **Live feel:** Scan bar animation across feed header, radar sweep in sidebar, second-by-second "Checked Xs ago" counter, new posts banner when refresh detects fresh data
+
+**Theme:** Dark mode by default, light mode available via toggle. Preference saved to localStorage.
+
+**Tech:** Single HTML file, vanilla JS, no framework. Supabase REST polled every 30s.
+
+**TradingView notes:**
+- CME futures (NQ1!, ES1!) require paid TradingView — using QQQ/SPY as free proxies
+- Chart tabs in sidebar are dynamic — show instruments from recent signals, not hardcoded
+- "Open Full Chart" button links to tradingview.com with correct symbol
 
 ---
 
 ## Deployment
 
-### Railway (recommended — easiest)
+### Railway (live — blissful-miracle project)
 
-1. Go to railway.app → New Project → Deploy from GitHub → gc101888/APIs
-2. Add all env vars from the list above
-3. Set start command: `python main.py`
-4. Deploy — done
+- **Service:** Trading-engine
+- **Status:** Online
+- **Repo:** gc101888/APIs (master branch)
+- **Start command:** `python main.py`
+- **Python version:** 3.13.13 (US West)
+
+To redeploy after code changes: push to master → Railway auto-deploys.
+
+To view logs: railway.app → blissful-miracle → Trading-engine → Deploy Logs
 
 ### Ubuntu VPS (alternative)
 
@@ -318,24 +362,22 @@ journalctl -u trading-engine -f
 | Supabase | Free | Live (tables created) |
 | GitHub Pages | Free | Live |
 | Telegram | Free | Live |
-| Truth Social feed | Free | Built, not deployed |
-| Binance prices | Free | Built, needs API keys |
-| Alpaca prices | Free | Built, needs sign-up |
-| Railway (engine host) | ~$5/month | Not deployed yet |
-| IBKR (futures prices + live trading later) | Free API | Not set up yet |
+| Truth Social feed | Free | Live (Railway) |
+| Binance prices | Free | Live (keys in Railway) |
+| Alpaca prices | Free | Keys still needed |
+| Railway (engine host) | ~$5/month | Live — blissful-miracle |
+| IBKR (futures + live trading) | Free API | Not set up yet |
 
-**Total to go live: $5/month**
+**Total running cost: ~$5/month**
 
 ---
 
 ## What's Next
 
-1. Add Binance API keys to env (user has account, just needs to generate key)
-2. Sign up for Alpaca (free, 2 min) — alpaca.markets
-3. Deploy to Railway ($5/month) — connect GitHub, paste env vars, done
-4. Open IBKR paper account (free) for NQ/ES futures prices
-5. Rebuild dashboard in Lovable (optional — current one works)
-6. Phase 2: connect IBKR for live trading
+1. **Sign up for Alpaca** (free, 2 min) at alpaca.markets → add ALPACA_API_KEY + ALPACA_API_SECRET to Railway → NQ/ES signals get real-time prices instead of 15min yfinance delay
+2. **IBKR paper account** — for real-time NQ/ES futures prices (replaces yfinance fallback entirely)
+3. **Phase 2: live trading** — connect IBKR broker to execute real trades when signals fire
+4. **Native app** — user wants to move from web to native app eventually. Dashboard at gc101888.github.io/APIs/ is fine for now but keep native architecture in mind
 
 ---
 
@@ -343,11 +385,33 @@ journalctl -u trading-engine -f
 
 | Decision | Reason |
 |---|---|
-| Gemini not Claude for AI | gRPC SSL fails in sandbox; REST API works everywhere |
-| gemini-2.5-flash-lite | Only free model with quota on this project |
+| Gemini not Claude for AI | gRPC SSL fails in Railway/sandbox; direct REST works everywhere |
+| gemini-2.5-flash-lite | Only free model with quota on this Gemini project — do not change |
 | aiohttp not SDK | Bypasses gRPC entirely |
-| db_logging not logging | Would shadow Python stdlib logging module |
-| asyncio.to_thread for Supabase | supabase-py is sync; can't block the event loop |
-| Monitoring loop not one-shot | One-shot 2hr check gives wrong outcome if price whipsaws |
-| QQQ/SPY not NQ/ES in widget | CME futures need paid TradingView |
-| TARGET_HIT/STOP_HIT not WIN/LOSS | Honest — not actually in a trade |
+| db_logging not logging | Would shadow Python stdlib logging module silently |
+| asyncio.to_thread for Supabase | supabase-py is synchronous; blocks event loop without it |
+| Outcome monitoring loop not one-shot | One-shot 2hr check gives wrong outcome if price whipsaws hit/miss/hit |
+| NQ/ES proxied to QQQ/SPY | CME futures have no free real-time data feed |
+| QQQ/SPY in TradingView widget | CME_MINI:NQ1! requires paid TradingView subscription |
+| TARGET_HIT/STOP_HIT not WIN/LOSS | Honest — not actually in a trade, paper only |
+| Telegram silent on PERSONAL_NOISE | Trump posts ~10-20x/day; most are noise. Alerts only when signal fires |
+| Truth Social token optional | Public stream works unauthenticated; API registration endpoint is 403 blocked |
+| GEOPOLITICAL → BUY GLD | Geopolitical tension is safe-haven positive for gold (original brief had SELL which was wrong) |
+
+---
+
+## Local Development
+
+Repo is cloned at: `C:\Users\glenn\APIs`
+
+```bash
+# Windows — packages don't install cleanly on Python 3.14 (pyiceberg build issue)
+# Run and test via Railway instead
+
+# To push changes:
+cd C:\Users\glenn\APIs
+git add .
+git commit -m "your message"
+git push origin master
+# Railway auto-redeploys on push
+```
