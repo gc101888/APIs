@@ -93,6 +93,20 @@ async def main() -> None:
         access_token=os.getenv("TRUTH_SOCIAL_ACCESS_TOKEN") or None,
     )
 
+    x_poller = None
+    x_task = None
+    if all(os.getenv(k) for k in ("X_USERNAME", "X_EMAIL", "X_PASSWORD")):
+        from feeds.x_poller import XPoller
+        x_poller = XPoller(
+            username=os.environ["X_USERNAME"],
+            email=os.environ["X_EMAIL"],
+            password=os.environ["X_PASSWORD"],
+            on_post=on_post,
+        )
+        logger.info("X poller configured — will monitor Elon, Altman, Fed Reserve")
+    else:
+        logger.info("X credentials not set — X poller disabled")
+
     loop = asyncio.get_running_loop()
     stop_event = asyncio.Event()
 
@@ -111,6 +125,8 @@ async def main() -> None:
 
     summary_task = asyncio.create_task(_daily_summary_loop(telegram, supabase))
     feed_task = asyncio.create_task(feed.start())
+    if x_poller:
+        x_task = asyncio.create_task(x_poller.start())
 
     try:
         await stop_event.wait()
@@ -121,9 +137,14 @@ async def main() -> None:
     finally:
         logger.info("Shutting down...")
         await feed.stop()
-        summary_task.cancel()
-        feed_task.cancel()
-        await asyncio.gather(summary_task, feed_task, return_exceptions=True)
+        if x_poller:
+            x_poller.stop()
+        tasks = [summary_task, feed_task]
+        if x_task:
+            tasks.append(x_task)
+        for t in tasks:
+            t.cancel()
+        await asyncio.gather(*tasks, return_exceptions=True)
         logger.info("Trading engine stopped")
 
 

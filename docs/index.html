@@ -551,36 +551,50 @@
       live: true,
     },
     {
-      id: 'future-elon',
+      id: 'x_elonmusk',
       name: 'Elon Musk',
       handle: '@elonmusk',
       platform: 'X (Twitter)',
       desc: 'CEO of Tesla, SpaceX, and X',
       gradient: 'linear-gradient(135deg, #222 0%, #555 100%)',
       initials: 'E',
-      live: false,
+      live: true,
     },
     {
-      id: 'future-altman',
+      id: 'x_sama',
       name: 'Sam Altman',
       handle: '@sama',
       platform: 'X (Twitter)',
       desc: 'CEO of OpenAI',
       gradient: 'linear-gradient(135deg, #6c3483 0%, #1a6ea8 100%)',
       initials: 'SA',
-      live: false,
+      live: true,
     },
     {
-      id: 'future-jpow',
-      name: 'Jerome Powell',
+      id: 'x_federalreserve',
+      name: 'Federal Reserve',
       handle: '@federalreserve',
-      platform: 'X (Twitter) · Fed RSS',
-      desc: 'Chair, Federal Reserve',
+      platform: 'X (Twitter)',
+      desc: 'U.S. Federal Reserve — Jerome Powell',
       gradient: 'linear-gradient(135deg, #1a5276 0%, #148f77 100%)',
-      initials: 'JP',
-      live: false,
+      initials: 'FED',
+      live: true,
     },
   ];
+
+  // Return the account registry entry for a given post
+  function getPostAuthor(post) {
+    const rj = post.raw_json || {};
+    if (rj.platform === 'x') {
+      return ALL_ACCOUNTS.find(a => a.id === `x_${rj.author}`) || {
+        id: `x_${rj.author}`, name: rj.display_name || rj.author,
+        handle: `@${rj.author}`, initials: (rj.author||'X')[0].toUpperCase(),
+        gradient: 'linear-gradient(135deg, #222 0%, #555 100%)',
+      };
+    }
+    return ALL_ACCOUNTS[0]; // Truth Social → Trump
+  }
+  function getPostAccountId(post) { return getPostAuthor(post).id; }
 
   function tvSym(i) { return TV_MAP[(i||'').toUpperCase()] || (i||'').toUpperCase(); }
   function tvUrl(i) { return 'https://www.tradingview.com/chart/?symbol='+encodeURIComponent(tvSym(i)); }
@@ -688,7 +702,7 @@
   function renderFeed(flashIds=[]) {
     const el = document.getElementById('feed');
     const followed = getFollowed();
-    let visible = posts.filter(p => followed.includes('107780257626128497')); // filter by followed accounts
+    let visible = posts.filter(p => followed.includes(getPostAccountId(p)));
     if (tab==='signals') visible = visible.filter(p => sigMap[p.post_id]?.length);
 
     if (!visible.length) {
@@ -707,6 +721,7 @@
       const cls = clsMap[p.post_id];
       const sig = sigMap[p.post_id]?.[0];
       const isFlash = flashIds.includes(p.post_id);
+      const author = getPostAuthor(p);
       let pill = '';
       if (sig) {
         pill = `<span class="pill ${sig.direction==='BUY'?'pill-buy':'pill-sell'}">${sig.direction==='BUY'?'↑':'↓'} ${esc(sig.instrument)} · ${sig.direction}</span>`;
@@ -717,12 +732,12 @@
       return `
         <div class="post-card${selectedId===p.post_id?' selected':''}${isFlash?' flash':''}"
              data-id="${esc(p.post_id)}" onclick="selectPost('${esc(p.post_id)}')">
-          <div class="avatar">T</div>
+          <div class="avatar" style="background:${author.gradient}">${esc(author.initials)}</div>
           <div class="post-body">
             <div class="post-head">
-              <span class="post-name">Donald J. Trump</span>
+              <span class="post-name">${esc(author.name)}</span>
               <span class="post-check">✓</span>
-              <span class="post-handle">@realDonaldTrump</span>
+              <span class="post-handle">${esc(author.handle)}</span>
               <span class="post-age">${ago(p.posted_at||p.created_at)}</span>
             </div>
             <div class="post-text">${esc(p.content||'')}</div>
@@ -741,12 +756,13 @@
     const post = posts.find(p=>p.post_id===id);
     const cls  = clsMap[id];
     const sig  = sigMap[id]?.[0];
+    const author = post ? getPostAuthor(post) : ALL_ACCOUNTS[0];
     emptyEl.style.display='none'; tradeEl.style.display='block';
 
     if (!sig) {
       tradeEl.innerHTML = `
         <div class="post-excerpt">
-          <div class="pe-label">Trump Post</div>
+          <div class="pe-label">${esc(author.name)}</div>
           <div class="pe-text">${esc(post?.content||'')}</div>
           ${cls?.reasoning?`<div class="pe-reasoning">${esc(cls.reasoning)}</div>`:''}
         </div>
@@ -790,7 +806,7 @@
         </div>
       </div>
       <div class="post-excerpt">
-        <div class="pe-label">Trump Post</div>
+        <div class="pe-label">${esc(author.name)}</div>
         <div class="pe-text">${esc(post?.content||'')}</div>
         ${cls?.reasoning?`<div class="pe-reasoning">"${esc(cls.reasoning)}"</div>`:''}
       </div>

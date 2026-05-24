@@ -4,3 +4,4 @@ supabase>=2.4.0
 python-telegram-bot>=21.0
 yfinance>=0.2.40
 python-dotenv>=1.0.0
+twikit>=2.0.0
