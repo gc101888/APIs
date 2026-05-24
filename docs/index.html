@@ -159,17 +159,19 @@
     .monitor-sub { font-size: 10px; color: var(--text-2); text-align: center; margin-top: 3px; }
     @keyframes scan-pulse { 0%,100%{opacity:1} 50%{opacity:0.35} }
     .scan-pulse { animation: scan-pulse 2s ease-in-out infinite; }
-    .refresh-btn {
-      width: 100%; margin-top: 10px;
-      padding: 7px; border-radius: 8px;
-      font-size: 11px; font-weight: 600;
-      color: var(--text-2); background: transparent;
-      border: 1px solid var(--border);
-      cursor: pointer; transition: all 0.15s; display: flex;
-      align-items: center; justify-content: center; gap: 5px;
+    .activity-log {
+      margin-top: 10px; display: flex; flex-direction: column; gap: 3px;
+      border-top: 1px solid var(--border); padding-top: 9px;
     }
-    .refresh-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
-    .refresh-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    @keyframes ae-in { from { opacity:0; transform:translateY(-3px); } to { opacity:1; transform:translateY(0); } }
+    .ae {
+      display: flex; align-items: center; gap: 5px;
+      font-family: 'Courier New', monospace; font-size: 9.5px;
+      animation: ae-in 0.25s ease-out; line-height: 1.4;
+    }
+    .ae-t { color: var(--text-3); flex-shrink: 0; }
+    .ae-d { flex-shrink: 0; }
+    .ae-m { color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
     /* ── MAIN CONTENT ── */
     .main { flex: 1; min-width: 0; display: flex; }
@@ -465,7 +467,7 @@
       <div class="monitor-label">Watching <strong>@realDonaldTrump</strong></div>
       <div class="monitor-status" id="monitor-status">Connecting…</div>
       <div class="monitor-sub" id="monitor-sub"></div>
-      <button class="refresh-btn" id="refresh-btn" onclick="manualRefresh()">↻ Force refresh</button>
+      <div class="activity-log" id="activity-log"></div>
     </div>
   </nav>
 
@@ -595,6 +597,25 @@
   let selectedId=null, tab='all', pendingNewIds=[];
   let nextRefresh=null, refreshTimer=null, realtimeOk=false;
   const REFRESH_MS = 30000;
+  const SESSION_START = Date.now();
+  let activityEntries = [];
+
+  function ts() { return new Date().toTimeString().slice(0,8); }
+
+  function addActivity(msg, color) {
+    activityEntries.unshift({ t: ts(), msg, color: color||'var(--text-2)' });
+    if (activityEntries.length > 6) activityEntries.pop();
+    const el = document.getElementById('activity-log');
+    if (!el) return;
+    el.innerHTML = activityEntries.map((e, i) => {
+      const op = Math.max(0.25, 1 - i * 0.18);
+      return `<div class="ae" style="opacity:${op}">
+        <span class="ae-t">${e.t}</span>
+        <span class="ae-d" style="color:${e.color}">▸</span>
+        <span class="ae-m" style="color:${e.color}">${e.msg}</span>
+      </div>`;
+    }).join('');
+  }
 
   // ── THEME ──
   function applyTheme(t) {
@@ -888,10 +909,11 @@
         if (selectedId) renderRightPanel(selectedId);
       }
 
+      addActivity('feed sync complete');
       scheduleRefresh();
     } catch(e) {
       console.error(e);
-      document.getElementById('monitor-status').textContent='Connection error';
+      addActivity('sync error — retrying', 'var(--red)');
       scheduleRefresh();
     }
   }
@@ -899,19 +921,10 @@
   function scheduleRefresh() {
     if (refreshTimer) clearTimeout(refreshTimer);
     nextRefresh = Date.now() + REFRESH_MS;
-    refreshTimer = setTimeout(() => loadData(true), REFRESH_MS);
-  }
-
-  async function manualRefresh() {
-    const btn = document.getElementById('refresh-btn');
-    btn.disabled = true;
-    btn.textContent = 'Refreshing…';
-    if (refreshTimer) clearTimeout(refreshTimer);
-    nextRefresh = null;
-    document.getElementById('monitor-status').textContent = 'Refreshing…';
-    await loadData(true);
-    btn.disabled = false;
-    btn.innerHTML = '↻ Refresh now';
+    refreshTimer = setTimeout(() => {
+      addActivity('heartbeat check');
+      loadData(true);
+    }, REFRESH_MS);
   }
 
   // ── REALTIME ──
@@ -919,13 +932,28 @@
     if (!window.supabase) return;
     const rt = window.supabase.createClient(SB_URL, SB_KEY);
     rt.channel('live')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'posts' },
-        () => loadData(true))
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'signals' },
-        () => { loadData(true); })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'posts' }, () => {
+        addActivity('new post detected', 'var(--accent)');
+        loadData(true);
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'signals' }, () => {
+        addActivity('signal update received', 'var(--green)');
+        loadData(true);
+      })
       .subscribe(status => {
+        const wasOk = realtimeOk;
         realtimeOk = (status === 'SUBSCRIBED');
+        if (realtimeOk && !wasOk) addActivity('realtime feed connected', 'var(--green)');
+        if (!realtimeOk && wasOk) addActivity('connection lost — reconnecting', 'var(--gold)');
       });
+  }
+
+  function uptimeStr() {
+    const s = Math.floor((Date.now() - SESSION_START) / 1000);
+    const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
+    if (h) return `${h}h ${m}m`;
+    if (m) return `${m}m ${sec}s`;
+    return `${sec}s`;
   }
 
   function updateStatus() {
@@ -933,13 +961,14 @@
     const subEl    = document.getElementById('monitor-sub');
     if (realtimeOk) {
       statusEl.innerHTML = '<span style="color:var(--green)" class="scan-pulse">● Live</span>';
-      subEl.textContent  = posts.length ? `${posts.length} posts tracked` : 'Scanning Truth Social…';
+      subEl.textContent  = `${posts.length} posts · uptime ${uptimeStr()}`;
     } else {
       statusEl.innerHTML = '<span style="color:var(--gold)">◌ Reconnecting…</span>';
-      subEl.textContent  = 'Waiting for connection';
+      subEl.textContent  = `uptime ${uptimeStr()}`;
     }
   }
 
+  addActivity('session started');
   loadData(false);
   initRealtime();
   setInterval(updateStatus, 1000);
