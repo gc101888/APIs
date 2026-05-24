@@ -644,12 +644,7 @@
     <div class="s-card">
       <div class="s-card-head">
         Live Chart
-        <div class="sym-tabs" id="sym-tabs">
-          <button class="sym-btn on" onclick="switchSym('NASDAQ:QQQ', 'NQ', this)">NQ</button>
-          <button class="sym-btn" onclick="switchSym('AMEX:SPY', 'ES', this)">ES</button>
-          <button class="sym-btn" onclick="switchSym('BINANCE:BTCUSDT', 'BTC', this)">BTC</button>
-          <button class="sym-btn" onclick="switchSym('AMEX:GLD', 'GLD', this)">GLD</button>
-        </div>
+        <div class="sym-tabs" id="sym-tabs"></div>
       </div>
       <div class="chart-wrap" id="chart-wrap"></div>
     </div>
@@ -886,6 +881,9 @@
         pnlEl.className = 'stat-value';
       }
 
+      // Update chart tabs to reflect actual traded instruments
+      updateChartTabs(sigList);
+
       // Open signals sidebar
       const openSigs = sigList.filter(s => !s.outcome || s.outcome === 'OPEN').slice(0, 6);
       const openEl = document.getElementById('open-signals');
@@ -927,8 +925,10 @@
 
   // ─── TRADINGVIEW CHART ───
   let currentSym = 'NASDAQ:QQQ';
+  let userPickedSym = false; // true once user manually clicks a tab
 
   function renderChart(sym) {
+    currentSym = sym;
     const wrap = document.getElementById('chart-wrap');
     wrap.innerHTML = '';
     const outer = document.createElement('div');
@@ -960,11 +960,40 @@
     wrap.appendChild(outer);
   }
 
-  function switchSym(sym, label, btn) {
-    currentSym = sym;
+  function switchSym(sym, btn) {
+    userPickedSym = true;
     document.querySelectorAll('.sym-btn').forEach(b => b.classList.remove('on'));
     btn.classList.add('on');
     renderChart(sym);
+  }
+
+  function updateChartTabs(sigList) {
+    // Build unique instrument list from recent signals, most recent first
+    const seen = new Set();
+    const instruments = [];
+    for (const s of sigList) {
+      if (s.instrument && !seen.has(s.instrument)) {
+        seen.add(s.instrument);
+        instruments.push(s.instrument);
+        if (instruments.length >= 5) break;
+      }
+    }
+    // Fallback tabs if no signals yet
+    if (instruments.length === 0) {
+      instruments.push('NQ', 'ES', 'BTC', 'GLD');
+    }
+
+    const tabsEl = document.getElementById('sym-tabs');
+    tabsEl.innerHTML = instruments.map((inst, i) => {
+      const sym = tvSym(inst);
+      const isActive = !userPickedSym ? i === 0 : sym === currentSym;
+      return `<button class="sym-btn${isActive ? ' on' : ''}" onclick="switchSym('${sym}', this)">${esc(inst)}</button>`;
+    }).join('');
+
+    // Auto-switch chart to most recent signal's instrument (unless user has manually picked)
+    if (!userPickedSym && instruments.length > 0) {
+      renderChart(tvSym(instruments[0]));
+    }
   }
 
   // ─── INIT ───
