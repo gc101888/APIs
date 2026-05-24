@@ -6,6 +6,7 @@
   <title>TrumpTrader</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <style>
     /* ── THEMES ── */
     :root, [data-theme="dark"] {
@@ -459,7 +460,7 @@
         </div>
       </div>
       <div class="monitor-label">Watching <strong>@realDonaldTrump</strong></div>
-      <div class="monitor-status" id="monitor-status">Connecting...</div>
+      <div class="monitor-status" id="monitor-status">Connecting…</div>
       <button class="refresh-btn" id="refresh-btn" onclick="manualRefresh()">↻ Refresh now</button>
     </div>
   </nav>
@@ -588,7 +589,7 @@
   // ── STATE ──
   let posts=[], clsMap={}, sigMap={};
   let selectedId=null, tab='all', pendingNewIds=[];
-  let nextRefresh=null, refreshTimer=null;
+  let nextRefresh=null, refreshTimer=null, realtimeOk=false;
   const REFRESH_MS = 30000;
 
   // ── THEME ──
@@ -909,8 +910,26 @@
     btn.innerHTML = '↻ Refresh now';
   }
 
+  // ── REALTIME ──
+  function initRealtime() {
+    if (!window.supabase) return;
+    const rt = window.supabase.createClient(SB_URL, SB_KEY);
+    rt.channel('live')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'posts' },
+        () => loadData(true))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'signals' },
+        () => { loadData(true); })
+      .subscribe(status => {
+        realtimeOk = (status === 'SUBSCRIBED');
+      });
+  }
+
   function updateStatus() {
     const el = document.getElementById('monitor-status');
+    if (realtimeOk) {
+      el.innerHTML = '<span style="color:var(--green)">● Live</span>';
+      return;
+    }
     if (!nextRefresh) return;
     const sLeft = Math.ceil((nextRefresh - Date.now()) / 1000);
     if (sLeft <= 0) { el.textContent = 'Refreshing…'; return; }
@@ -918,6 +937,7 @@
   }
 
   loadData(false);
+  initRealtime();
   setInterval(updateStatus, 1000);
 </script>
 </body>
