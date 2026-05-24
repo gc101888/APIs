@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,25 +7,47 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    :root {
-      --bg:          #000000;
-      --surface:     #16181c;
-      --surface-2:   #1e2126;
-      --border:      #2f3336;
-      --text-1:      #e7e9ea;
-      --text-2:      #71767b;
-      --accent:      #1d9bf0;
-      --accent-dim:  rgba(29,155,240,0.12);
-      --green:       #00ba7c;
-      --green-dim:   rgba(0,186,124,0.12);
-      --red:         #f4212e;
-      --red-dim:     rgba(244,33,46,0.12);
-      --gold:        #ffd700;
-      --r:           16px;
-      --r-sm:        12px;
-      --sidebar-w:   240px;
-      --right-w:     360px;
+    /* ── THEMES ── */
+    :root, [data-theme="dark"] {
+      --bg:         #000000;
+      --surface:    #16181c;
+      --surface-2:  #1e2126;
+      --border:     #2f3336;
+      --text-1:     #e7e9ea;
+      --text-2:     #71767b;
+      --text-3:     #536471;
+      --accent:     #1d9bf0;
+      --accent-dim: rgba(29,155,240,0.12);
+      --green:      #00ba7c;
+      --green-dim:  rgba(0,186,124,0.12);
+      --red:        #f4212e;
+      --red-dim:    rgba(244,33,46,0.12);
+      --gold:       #ffd700;
+      --gold-dim:   rgba(255,215,0,0.12);
+      --hover:      rgba(255,255,255,0.06);
+      --shadow:     none;
     }
+    [data-theme="light"] {
+      --bg:         #ffffff;
+      --surface:    #f7f9f9;
+      --surface-2:  #eff3f4;
+      --border:     #cfd9de;
+      --text-1:     #0f1419;
+      --text-2:     #536471;
+      --text-3:     #8b98a5;
+      --accent:     #1d9bf0;
+      --accent-dim: rgba(29,155,240,0.10);
+      --green:      #00a96e;
+      --green-dim:  rgba(0,169,110,0.10);
+      --red:        #e0245e;
+      --red-dim:    rgba(224,36,94,0.10);
+      --gold:       #b8860b;
+      --gold-dim:   rgba(184,134,11,0.10);
+      --hover:      rgba(0,0,0,0.04);
+      --shadow:     0 1px 3px rgba(0,0,0,0.08);
+    }
+
+    /* ── RESET ── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; }
     body {
@@ -36,71 +58,55 @@
       font-size: 15px;
       line-height: 1.5;
       -webkit-font-smoothing: antialiased;
-      display: flex;
-      justify-content: center;
+      transition: background 0.2s, color 0.2s;
     }
     a { color: inherit; text-decoration: none; }
     button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
 
     /* ── APP SHELL ── */
-    .app {
-      display: flex;
-      width: 100%;
-      max-width: 1265px;
-      min-height: 100vh;
-    }
+    .app { display: flex; min-height: 100vh; justify-content: center; }
+    .app-inner { display: flex; width: 100%; max-width: 1265px; min-height: 100vh; }
 
     /* ── LEFT SIDEBAR ── */
     .sidebar {
-      width: var(--sidebar-w);
-      min-height: 100vh;
-      padding: 8px 12px 24px;
-      display: flex;
-      flex-direction: column;
-      position: sticky;
-      top: 0;
-      height: 100vh;
+      width: 240px; flex-shrink: 0;
+      position: sticky; top: 0; height: 100vh;
       overflow-y: auto;
       border-right: 1px solid var(--border);
-      flex-shrink: 0;
+      padding: 8px 12px 24px;
+      display: flex; flex-direction: column;
+      transition: border-color 0.2s;
     }
     .logo {
-      width: 44px; height: 44px;
+      width: 44px; height: 44px; border-radius: 50%;
       background: var(--accent);
-      border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
       font-size: 20px; font-weight: 900; color: white;
-      margin: 8px 0 20px 8px;
-      flex-shrink: 0;
+      margin: 8px 0 20px 8px; flex-shrink: 0;
     }
     .nav-item {
       display: flex; align-items: center; gap: 16px;
-      padding: 11px 14px;
-      border-radius: 9999px;
-      font-size: 19px; font-weight: 400;
-      color: var(--text-1);
-      cursor: pointer;
-      transition: background 0.15s;
-      width: 100%; text-align: left;
+      padding: 11px 14px; border-radius: 9999px;
+      font-size: 18px; font-weight: 400;
+      color: var(--text-1); cursor: pointer;
+      transition: background 0.15s; width: 100%; text-align: left;
     }
-    .nav-item:hover { background: rgba(255,255,255,0.06); }
+    .nav-item:hover { background: var(--hover); }
     .nav-item.active { font-weight: 700; }
-    .nav-icon { font-size: 21px; width: 24px; text-align: center; flex-shrink: 0; }
-    .nav-label { font-size: 18px; }
+    .nav-icon { font-size: 20px; width: 24px; text-align: center; flex-shrink: 0; }
+    .nav-label { font-size: 17px; }
+    .nav-divider { height: 1px; background: var(--border); margin: 8px 14px; }
 
-    /* Radar monitor box */
+    /* Monitor box */
     .monitor-box {
-      margin-top: auto;
-      padding: 14px;
-      border: 1px solid var(--border);
-      border-radius: var(--r-sm);
-      background: var(--surface);
+      margin-top: auto; padding: 14px;
+      border: 1px solid var(--border); border-radius: 12px;
+      background: var(--surface); transition: background 0.2s, border-color 0.2s;
     }
     .monitor-title {
       display: flex; align-items: center; gap: 8px;
       font-size: 11px; font-weight: 700; letter-spacing: 0.8px;
-      text-transform: uppercase; color: var(--text-2);
-      margin-bottom: 12px;
+      text-transform: uppercase; color: var(--text-2); margin-bottom: 12px;
     }
     .live-dot {
       width: 7px; height: 7px; border-radius: 50%;
@@ -111,26 +117,17 @@
       0%,100% { opacity:1; box-shadow: 0 0 0 0 rgba(0,186,124,0.5); }
       50%      { opacity:0.7; box-shadow: 0 0 0 5px rgba(0,186,124,0); }
     }
-    .radar-wrap {
-      display: flex; align-items: center; justify-content: center;
-      margin: 10px 0;
-    }
+    .radar-wrap { display: flex; justify-content: center; margin: 10px 0; }
     .radar {
       width: 60px; height: 60px; border-radius: 50%;
-      border: 1px solid rgba(29,155,240,0.4);
-      background: rgba(29,155,240,0.03);
+      border: 1px solid rgba(29,155,240,0.35);
+      background: var(--accent-dim);
       position: relative; overflow: hidden;
     }
-    /* Concentric rings */
     .radar::before {
-      content: '';
-      position: absolute;
-      inset: 15px;
-      border-radius: 50%;
-      border: 1px solid rgba(29,155,240,0.2);
-      pointer-events: none;
+      content: ''; position: absolute; inset: 15px; border-radius: 50%;
+      border: 1px solid rgba(29,155,240,0.2); pointer-events: none;
     }
-    /* Crosshairs */
     .radar-cross {
       position: absolute; inset: 0;
       background:
@@ -143,205 +140,159 @@
       background: conic-gradient(
         from 0deg,
         transparent 270deg,
-        rgba(29,155,240,0.6) 315deg,
+        rgba(29,155,240,0.7) 315deg,
         rgba(29,155,240,0.15) 360deg
       );
       animation: sweep 3s linear infinite;
     }
     .radar-dot {
-      position: absolute; top: 50%; left: 50%;
-      width: 5px; height: 5px; border-radius: 50%;
-      background: var(--accent);
-      transform: translate(-50%,-50%);
+      position: absolute; top:50%; left:50%;
+      width:5px; height:5px; border-radius:50%;
+      background: var(--accent); transform: translate(-50%,-50%);
       box-shadow: 0 0 6px var(--accent);
     }
     @keyframes sweep { to { transform: rotate(360deg); } }
-    .monitor-label {
-      font-size: 11px; color: var(--text-2); text-align: center; line-height: 1.5;
-    }
+    .monitor-label { font-size: 11px; color: var(--text-2); text-align: center; line-height: 1.5; }
     .monitor-label strong { color: var(--accent); }
-    .monitor-status {
-      font-size: 11px; color: var(--text-2); text-align: center;
-      margin-top: 6px; font-variant-numeric: tabular-nums;
-    }
+    .monitor-status { font-size: 11px; color: var(--text-2); text-align: center; margin-top: 6px; }
 
-    /* ── CENTER FEED ── */
-    .feed-col {
-      flex: 1; min-width: 0;
-      border-right: 1px solid var(--border);
-      max-width: 600px;
-    }
+    /* ── MAIN CONTENT ── */
+    .main { flex: 1; min-width: 0; display: flex; }
+
+    /* ── PAGE: HOME ── */
+    .page-home { flex: 1; display: none; }
+    .page-home.active { display: flex; }
+    .feed-col { flex: 1; min-width: 0; max-width: 600px; border-right: 1px solid var(--border); }
     .feed-header {
       position: sticky; top: 0; z-index: 10;
-      background: rgba(0,0,0,0.85);
+      background: var(--bg); opacity: 0.95;
       backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border);
+      transition: background 0.2s, border-color 0.2s;
     }
     .feed-tabs { display: flex; }
     .feed-tab {
       flex: 1; padding: 15px 0; text-align: center;
-      font-size: 15px; font-weight: 600;
-      color: var(--text-2); cursor: pointer;
-      border-bottom: 2px solid transparent;
+      font-size: 15px; font-weight: 600; color: var(--text-2);
+      cursor: pointer; border-bottom: 2px solid transparent;
       transition: all 0.15s;
     }
     .feed-tab.active { color: var(--text-1); border-bottom-color: var(--accent); }
-    .feed-tab:hover { background: rgba(255,255,255,0.03); }
+    .feed-tab:hover { background: var(--hover); }
     .scan-bar {
       height: 2px;
       background: linear-gradient(90deg, transparent 0%, var(--accent) 50%, transparent 100%);
-      animation: scan-anim 2.5s ease-in-out infinite;
-      opacity: 0.5;
+      animation: scan-anim 2.5s ease-in-out infinite; opacity: 0.5;
     }
     @keyframes scan-anim {
-      0%   { transform: scaleX(0) translateX(-100%); }
-      50%  { transform: scaleX(1) translateX(0%); }
-      100% { transform: scaleX(0) translateX(100%); }
+      0%   { transform: scaleX(0.05); opacity: 0; }
+      20%  { opacity: 0.5; }
+      50%  { transform: scaleX(1); opacity: 0.5; }
+      80%  { opacity: 0.5; }
+      100% { transform: scaleX(0.05); opacity: 0; }
     }
-
-    /* New posts banner */
     .new-banner {
       display: none; align-items: center; justify-content: center; gap: 8px;
       padding: 12px; cursor: pointer;
       color: var(--accent); font-size: 14px; font-weight: 600;
-      border-bottom: 1px solid var(--border);
-      background: var(--accent-dim);
+      border-bottom: 1px solid var(--border); background: var(--accent-dim);
       transition: background 0.15s;
     }
     .new-banner:hover { background: rgba(29,155,240,0.2); }
     .new-banner.show { display: flex; }
 
-    /* ── POST CARD ── */
+    /* Post card */
     .post-card {
-      display: flex; gap: 12px;
-      padding: 14px 16px;
+      display: flex; gap: 12px; padding: 14px 16px;
       border-bottom: 1px solid var(--border);
-      cursor: pointer;
-      transition: background 0.1s;
-      position: relative;
+      cursor: pointer; transition: background 0.1s; position: relative;
     }
-    .post-card:hover { background: rgba(255,255,255,0.03); }
-    .post-card.selected {
-      background: var(--accent-dim);
-      border-left: 3px solid var(--accent);
-      padding-left: 13px;
-    }
-    @keyframes flash-new {
-      0%   { background: rgba(29,155,240,0.2); }
-      100% { background: transparent; }
-    }
-    .post-card.flash { animation: flash-new 1.2s ease-out forwards; }
+    .post-card:hover { background: var(--hover); }
+    .post-card.selected { background: var(--accent-dim); border-left: 3px solid var(--accent); padding-left: 13px; }
+    @keyframes flash-new { 0% { background: var(--accent-dim); } 100% { background: transparent; } }
+    .post-card.flash { animation: flash-new 1.5s ease-out forwards; }
 
     .avatar {
       width: 42px; height: 42px; border-radius: 50%;
       background: linear-gradient(135deg, #1877f2 0%, #c13584 100%);
       display: flex; align-items: center; justify-content: center;
-      font-size: 17px; font-weight: 900; color: white;
-      flex-shrink: 0;
+      font-size: 17px; font-weight: 900; color: white; flex-shrink: 0;
     }
     .post-body { flex: 1; min-width: 0; }
-    .post-head {
-      display: flex; align-items: center; gap: 5px;
-      flex-wrap: wrap; margin-bottom: 3px;
-    }
+    .post-head { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; margin-bottom: 3px; }
     .post-name { font-weight: 700; font-size: 15px; }
     .post-check { color: var(--accent); font-size: 14px; }
     .post-handle { color: var(--text-2); font-size: 14px; }
     .post-age { color: var(--text-2); font-size: 14px; margin-left: auto; }
-    .post-text {
-      font-size: 15px; line-height: 1.6;
-      color: var(--text-1); word-break: break-word;
-      margin-bottom: 10px;
-    }
+    .post-text { font-size: 15px; line-height: 1.6; color: var(--text-1); word-break: break-word; margin-bottom: 10px; }
     .post-footer { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     .pill {
       display: inline-flex; align-items: center; gap: 5px;
       padding: 3px 10px; border-radius: 9999px;
-      font-size: 12px; font-weight: 700;
-      border: 1px solid transparent;
+      font-size: 12px; font-weight: 700; border: 1px solid transparent;
     }
     .pill-buy  { background: var(--green-dim); color: var(--green); border-color: rgba(0,186,124,0.3); }
     .pill-sell { background: var(--red-dim);   color: var(--red);   border-color: rgba(244,33,46,0.3); }
-    .pill-none { background: rgba(113,118,123,0.1); color: var(--text-2); border-color: var(--border); }
-    .pill-conf { background: var(--surface); color: var(--text-2); border-color: var(--border); font-weight: 500; }
+    .pill-none { background: var(--surface-2); color: var(--text-2); border-color: var(--border); }
+    .pill-conf { background: var(--surface);   color: var(--text-2); border-color: var(--border); font-weight: 500; }
 
-    /* ── RIGHT PANEL ── */
+    /* Feed empty */
+    .feed-empty { padding: 64px 24px; text-align: center; color: var(--text-2); }
+    .feed-empty-icon { font-size: 48px; margin-bottom: 16px; }
+    .feed-empty-title { font-size: 22px; font-weight: 800; color: var(--text-1); margin-bottom: 8px; }
+    .feed-empty-sub { font-size: 15px; line-height: 1.7; }
+
+    /* Right panel */
     .right-panel {
-      width: var(--right-w); flex-shrink: 0;
+      width: 360px; flex-shrink: 0;
       position: sticky; top: 0; height: 100vh;
       overflow-y: auto; padding: 16px;
       display: flex; flex-direction: column; gap: 14px;
     }
-
-    /* Empty / placeholder */
     .rp-empty {
       flex: 1; display: flex; flex-direction: column;
       align-items: center; justify-content: center;
-      text-align: center; color: var(--text-2); gap: 12px;
-      padding: 32px;
+      text-align: center; color: var(--text-2); gap: 12px; padding: 32px;
     }
     .rp-empty-icon { font-size: 44px; }
     .rp-empty-title { font-size: 22px; font-weight: 800; color: var(--text-1); }
     .rp-empty-sub { font-size: 14px; line-height: 1.7; }
 
-    /* Trade header */
-    .rp-instr-row {
-      display: flex; align-items: center; justify-content: space-between;
-    }
+    .rp-instr-row { display: flex; align-items: center; justify-content: space-between; }
     .rp-instr { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
-    .rp-dir {
-      display: flex; align-items: center; gap: 6px;
-      padding: 5px 14px; border-radius: 9999px;
-      font-size: 14px; font-weight: 700;
-    }
+    .rp-dir { display: flex; align-items: center; gap: 6px; padding: 5px 14px; border-radius: 9999px; font-size: 14px; font-weight: 700; }
     .rp-dir-buy  { background: var(--green-dim); color: var(--green); }
     .rp-dir-sell { background: var(--red-dim);   color: var(--red);   }
 
-    /* Outcome badge */
     .outcome-badge {
       display: inline-flex; align-items: center; gap: 6px;
-      padding: 6px 14px; border-radius: 9999px;
-      font-size: 13px; font-weight: 700;
-      border: 1px solid transparent;
+      padding: 6px 14px; border-radius: 9999px; font-size: 13px; font-weight: 700; border: 1px solid transparent;
     }
-    .ob-open   { background: rgba(255,215,0,0.1);  color: var(--gold);  border-color: rgba(255,215,0,0.3); }
+    .ob-open   { background: var(--gold-dim);  color: var(--gold);  border-color: rgba(255,215,0,0.3); }
     .ob-target { background: var(--green-dim); color: var(--green); border-color: rgba(0,186,124,0.3); }
     .ob-stop   { background: var(--red-dim);   color: var(--red);   border-color: rgba(244,33,46,0.3); }
-    .ob-time   { background: rgba(113,118,123,0.1); color: var(--text-2); border-color: var(--border); }
+    .ob-time   { background: var(--surface-2); color: var(--text-2); border-color: var(--border); }
 
-    /* P&L card */
     .pnl-card {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--r-sm); padding: 16px;
-      display: flex; align-items: center; justify-content: space-between;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+      padding: 16px; display: flex; align-items: center; justify-content: space-between;
+      box-shadow: var(--shadow);
     }
     .pnl-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-2); margin-bottom: 4px; }
     .pnl-number { font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; }
     .pnl-pos { color: var(--green); }
     .pnl-neg { color: var(--red); }
 
-    /* Chart embed */
-    .chart-embed {
-      border-radius: var(--r-sm); overflow: hidden;
-      border: 1px solid var(--border);
-    }
+    .chart-embed { border-radius: 12px; overflow: hidden; border: 1px solid var(--border); }
 
-    /* Levels card */
-    .levels-card {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--r-sm); overflow: hidden;
-    }
+    .levels-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; box-shadow: var(--shadow); }
     .levels-head {
-      padding: 9px 14px;
-      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      padding: 9px 14px; font-size: 11px; font-weight: 700; text-transform: uppercase;
       letter-spacing: 0.6px; color: var(--text-2);
       background: var(--surface-2); border-bottom: 1px solid var(--border);
     }
     .levels-grid { display: grid; grid-template-columns: repeat(3,1fr); }
-    .level-cell {
-      padding: 12px; border-right: 1px solid var(--border);
-      display: flex; flex-direction: column; gap: 4px;
-    }
+    .level-cell { padding: 12px; border-right: 1px solid var(--border); display: flex; flex-direction: column; gap: 4px; }
     .level-cell:last-child { border-right: none; }
     .lc-lbl { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-2); }
     .lc-val { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
@@ -349,91 +300,142 @@
     .lc-stop  { color: var(--red); }
     .lc-tgt   { color: var(--green); }
 
-    /* Post excerpt */
-    .post-excerpt {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--r-sm); padding: 14px;
-    }
+    .post-excerpt { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px; box-shadow: var(--shadow); }
     .pe-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-2); margin-bottom: 6px; }
     .pe-text { font-size: 14px; line-height: 1.6; color: var(--text-1); }
     .pe-reasoning { font-size: 12px; color: var(--text-2); font-style: italic; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
 
-    /* CTA */
-    .btn-chart {
+    .btn-full {
       display: flex; align-items: center; justify-content: center; gap: 8px;
-      width: 100%; padding: 13px;
-      background: var(--accent); color: white;
+      width: 100%; padding: 13px; background: var(--accent); color: white;
       border-radius: 9999px; font-size: 15px; font-weight: 700;
-      transition: background 0.15s; cursor: pointer; border: none;
+      transition: opacity 0.15s; cursor: pointer; border: none;
     }
-    .btn-chart:hover { background: #1a8cd8; }
+    .btn-full:hover { opacity: 0.85; }
 
-    .no-signal-msg {
-      text-align: center; padding: 24px;
-      color: var(--text-2); font-size: 14px; line-height: 1.7;
+    .no-signal-msg { text-align: center; padding: 24px; color: var(--text-2); font-size: 14px; line-height: 1.7; }
+
+    /* ── PAGE: ANALYTICS ── */
+    .page-analytics { flex: 1; display: none; padding: 28px 32px; overflow-y: auto; }
+    .page-analytics.active { display: block; }
+
+    /* ── PAGE: FOLLOWING ── */
+    .page-following { flex: 1; display: none; padding: 0; overflow-y: auto; }
+    .page-following.active { display: block; }
+
+    /* Shared page header */
+    .page-header {
+      padding: 16px 20px;
+      font-size: 18px; font-weight: 800;
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 10;
+      background: var(--bg); backdrop-filter: blur(12px);
     }
 
-    /* ── ANALYTICS PAGE ── */
-    .analytics-page {
-      display: none; position: fixed; inset: 0;
-      background: var(--bg); z-index: 100; overflow-y: auto; padding: 28px 32px;
-    }
-    .analytics-page.show { display: block; }
-    .ap-back {
-      display: inline-flex; align-items: center; gap: 8px;
-      color: var(--accent); font-size: 15px; font-weight: 600;
-      cursor: pointer; margin-bottom: 28px;
-    }
-    .ap-back:hover { text-decoration: underline; }
-    .ap-title { font-size: 26px; font-weight: 800; margin-bottom: 24px; }
+    /* Analytics grid */
     .ap-grid {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-      gap: 16px; max-width: 900px; margin-bottom: 36px;
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr));
+      gap: 16px; margin: 24px 0;
     }
-    .ap-box {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--r-sm); padding: 20px;
-    }
+    .ap-box { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; box-shadow: var(--shadow); }
     .ap-box-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-2); margin-bottom: 8px; }
-    .ap-box-value { font-size: 34px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -1px; }
+    .ap-box-value { font-size: 32px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -1px; }
 
-    /* ── FEED EMPTY ── */
-    .feed-empty {
-      padding: 64px 24px; text-align: center; color: var(--text-2);
+    /* Following page */
+    .following-section { padding: 20px; }
+    .following-section-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-2); margin-bottom: 16px; }
+    .account-card {
+      display: flex; align-items: center; gap: 14px;
+      padding: 16px; margin-bottom: 10px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; box-shadow: var(--shadow);
+      transition: background 0.15s;
     }
-    .feed-empty-icon { font-size: 48px; margin-bottom: 16px; }
-    .feed-empty-title { font-size: 22px; font-weight: 800; color: var(--text-1); margin-bottom: 8px; }
-    .feed-empty-sub { font-size: 15px; line-height: 1.7; }
+    .account-card:hover { background: var(--surface-2); }
+    .account-avatar {
+      width: 48px; height: 48px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 19px; font-weight: 900; color: white; flex-shrink: 0;
+    }
+    .account-info { flex: 1; min-width: 0; }
+    .account-name { font-weight: 700; font-size: 15px; }
+    .account-handle { font-size: 13px; color: var(--text-2); }
+    .account-meta { font-size: 12px; color: var(--text-3); margin-top: 3px; }
+    .account-trading {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 11px; font-weight: 600;
+      color: var(--green); background: var(--green-dim);
+      padding: 2px 8px; border-radius: 999px;
+      border: 1px solid rgba(0,186,124,0.3);
+      margin-top: 5px;
+    }
+    .follow-toggle {
+      flex-shrink: 0;
+      padding: 7px 18px; border-radius: 9999px;
+      font-size: 14px; font-weight: 700;
+      cursor: pointer; transition: all 0.15s; border: 1px solid transparent;
+    }
+    .follow-toggle.following {
+      background: transparent; color: var(--text-1); border-color: var(--border);
+    }
+    .follow-toggle.following:hover { border-color: var(--red); color: var(--red); background: var(--red-dim); }
+    .follow-toggle.not-following {
+      background: var(--text-1); color: var(--bg);
+    }
+    .follow-toggle.not-following:hover { opacity: 0.85; }
+
+    .account-card.coming-soon { opacity: 0.4; pointer-events: none; }
+    .coming-badge {
+      font-size: 11px; font-weight: 700; color: var(--text-2);
+      background: var(--surface-2); border: 1px solid var(--border);
+      padding: 3px 10px; border-radius: 999px;
+    }
+
+    .following-note {
+      margin: 0 20px 20px;
+      padding: 14px 16px;
+      background: var(--accent-dim); border: 1px solid rgba(29,155,240,0.25);
+      border-radius: 12px; font-size: 13px; color: var(--text-2); line-height: 1.6;
+    }
+    .following-note strong { color: var(--accent); }
 
     /* ── RESPONSIVE ── */
-    @media (max-width: 1100px) { :root { --right-w: 300px; } }
+    @media (max-width: 1100px) { .right-panel { width: 300px; } }
     @media (max-width: 900px) {
       .sidebar { width: 72px; padding: 8px; }
       .nav-label, .monitor-box { display: none; }
       .logo { margin-left: 4px; }
     }
-    @media (max-width: 700px) {
-      .right-panel { display: none; }
-    }
-    @media (max-width: 500px) {
-      .sidebar { display: none; }
-    }
+    @media (max-width: 700px) { .right-panel { display: none !important; } }
+    @media (max-width: 500px) { .sidebar { display: none; } }
   </style>
 </head>
 <body>
 <div class="app">
+<div class="app-inner">
 
-  <!-- ── LEFT SIDEBAR ── -->
+  <!-- ── SIDEBAR (always visible) ── -->
   <nav class="sidebar">
     <div class="logo">T</div>
 
-    <button class="nav-item active" id="nav-home" onclick="showHome()">
+    <button class="nav-item active" id="nav-home" onclick="showPage('home')">
       <span class="nav-icon">🏠</span>
       <span class="nav-label">Home</span>
     </button>
-    <button class="nav-item" id="nav-analytics" onclick="showAnalytics()">
+    <button class="nav-item" id="nav-following" onclick="showPage('following')">
+      <span class="nav-icon">👥</span>
+      <span class="nav-label">Following</span>
+    </button>
+    <button class="nav-item" id="nav-analytics" onclick="showPage('analytics')">
       <span class="nav-icon">📊</span>
       <span class="nav-label">Analytics</span>
+    </button>
+
+    <div class="nav-divider"></div>
+
+    <button class="nav-item" id="theme-btn" onclick="toggleTheme()">
+      <span class="nav-icon" id="theme-icon">☀️</span>
+      <span class="nav-label" id="theme-label">Light mode</span>
     </button>
 
     <div class="monitor-box">
@@ -450,39 +452,60 @@
     </div>
   </nav>
 
-  <!-- ── CENTER FEED ── -->
-  <main class="feed-col">
-    <div class="feed-header">
-      <div class="feed-tabs">
-        <div class="feed-tab active" id="tab-all" onclick="setTab('all')">Live Feed</div>
-        <div class="feed-tab" id="tab-signals" onclick="setTab('signals')">Signals Only</div>
+  <!-- ── MAIN ── -->
+  <div class="main">
+
+    <!-- HOME: feed + right panel -->
+    <div class="page-home active" id="page-home">
+      <div class="feed-col">
+        <div class="feed-header">
+          <div class="feed-tabs">
+            <div class="feed-tab active" id="tab-all"     onclick="setTab('all')">Live Feed</div>
+            <div class="feed-tab"        id="tab-signals" onclick="setTab('signals')">Signals Only</div>
+          </div>
+          <div class="scan-bar"></div>
+        </div>
+        <div class="new-banner" id="new-banner" onclick="showNewPosts()">
+          ↑ New posts — tap to load
+        </div>
+        <div id="feed"></div>
       </div>
-      <div class="scan-bar"></div>
+      <aside class="right-panel">
+        <div class="rp-empty" id="rp-empty">
+          <div class="rp-empty-icon">📡</div>
+          <div class="rp-empty-title">Select a post</div>
+          <div class="rp-empty-sub">Tap any post to see its AI classification and trade signal.</div>
+        </div>
+        <div id="rp-trade" style="display:none"></div>
+      </aside>
     </div>
-    <div class="new-banner" id="new-banner" onclick="showNewPosts()">
-      ↑ New posts detected — tap to load
+
+    <!-- FOLLOWING -->
+    <div class="page-following" id="page-following">
+      <div class="page-header">Following</div>
+      <div class="following-note">
+        Accounts you follow determine your <strong>feed</strong> and <strong>trading signals</strong>.
+        Toggle accounts on or off to control what you track.
+      </div>
+      <div class="following-section">
+        <div class="following-section-title">Active</div>
+        <div id="accounts-active"></div>
+      </div>
+      <div class="following-section">
+        <div class="following-section-title">Coming soon</div>
+        <div id="accounts-soon"></div>
+      </div>
     </div>
-    <div id="feed"></div>
-  </main>
 
-  <!-- ── RIGHT PANEL ── -->
-  <aside class="right-panel">
-    <div class="rp-empty" id="rp-empty">
-      <div class="rp-empty-icon">📡</div>
-      <div class="rp-empty-title">Select a post</div>
-      <div class="rp-empty-sub">Tap any post in the feed to view its AI classification and trade signal.</div>
+    <!-- ANALYTICS -->
+    <div class="page-analytics" id="page-analytics">
+      <div class="page-header" style="position:static;padding:0 0 16px">Analytics</div>
+      <div class="ap-grid" id="ap-grid"></div>
     </div>
-    <div id="rp-trade" style="display:none"></div>
-  </aside>
 
-</div>
-
-<!-- ── ANALYTICS PAGE ── -->
-<div class="analytics-page" id="analytics-page">
-  <div class="ap-back" onclick="showHome()">← Back to feed</div>
-  <div class="ap-title">Analytics</div>
-  <div class="ap-grid" id="ap-grid"></div>
-</div>
+  </div><!-- /main -->
+</div><!-- /app-inner -->
+</div><!-- /app -->
 
 <script>
   const SB_URL = 'https://hhnkojvtecsighomybyl.supabase.co';
@@ -496,8 +519,42 @@
     META:'NASDAQ:META', DJT:'NASDAQ:DJT', 'BTC-USD':'BINANCE:BTCUSDT',
   };
 
+  // Account registry — add future accounts here
+  const ALL_ACCOUNTS = [
+    {
+      id: '107780257626128497',
+      name: 'Donald J. Trump',
+      handle: '@realDonaldTrump',
+      platform: 'Truth Social',
+      desc: '47th President of the United States',
+      gradient: 'linear-gradient(135deg, #1877f2 0%, #c13584 100%)',
+      initials: 'T',
+      live: true,
+    },
+    {
+      id: 'future-elon',
+      name: 'Elon Musk',
+      handle: '@elonmusk',
+      platform: 'X (Twitter)',
+      desc: 'CEO of Tesla, SpaceX, and X',
+      gradient: 'linear-gradient(135deg, #222 0%, #555 100%)',
+      initials: 'E',
+      live: false,
+    },
+    {
+      id: 'future-jpow',
+      name: 'Jerome Powell',
+      handle: '@federalreserve',
+      platform: 'X (Twitter)',
+      desc: 'Chair, Federal Reserve',
+      gradient: 'linear-gradient(135deg, #1a5276 0%, #148f77 100%)',
+      initials: 'JP',
+      live: false,
+    },
+  ];
+
   function tvSym(i) { return TV_MAP[(i||'').toUpperCase()] || (i||'').toUpperCase(); }
-  function tvUrl(i) { return 'https://www.tradingview.com/chart/?symbol=' + encodeURIComponent(tvSym(i)); }
+  function tvUrl(i) { return 'https://www.tradingview.com/chart/?symbol='+encodeURIComponent(tvSym(i)); }
   function fmtP(v) {
     if (v==null) return '—';
     if (v>10000) return v.toLocaleString('en-US',{maximumFractionDigits:0});
@@ -509,8 +566,8 @@
   function ago(d) {
     if (!d) return '';
     const s = Math.floor((Date.now()-new Date(d).getTime())/1000);
-    if (s<60)  return 'just now';
-    if (s<3600) return Math.floor(s/60)+'m ago';
+    if (s<60)    return 'just now';
+    if (s<3600)  return Math.floor(s/60)+'m ago';
     if (s<86400) return Math.floor(s/3600)+'h ago';
     return Math.floor(s/86400)+'d ago';
   }
@@ -518,20 +575,48 @@
 
   // ── STATE ──
   let posts=[], clsMap={}, sigMap={};
-  let selectedId=null, tab='all', lastLoad=null;
-  let pendingNewIds=[];
+  let selectedId=null, tab='all', lastLoad=null, pendingNewIds=[];
 
-  // ── NAV ──
-  function showHome() {
-    document.getElementById('analytics-page').classList.remove('show');
-    document.getElementById('nav-home').classList.add('active');
-    document.getElementById('nav-analytics').classList.remove('active');
+  // ── THEME ──
+  function applyTheme(t) {
+    document.documentElement.setAttribute('data-theme', t);
+    localStorage.setItem('tt-theme', t);
+    const icon  = document.getElementById('theme-icon');
+    const label = document.getElementById('theme-label');
+    if (t==='dark')  { icon.textContent='☀️'; label.textContent='Light mode'; }
+    else             { icon.textContent='🌙'; label.textContent='Dark mode';  }
   }
-  function showAnalytics() {
-    document.getElementById('analytics-page').classList.add('show');
-    document.getElementById('nav-home').classList.remove('active');
-    document.getElementById('nav-analytics').classList.add('active');
-    renderAnalytics();
+  function toggleTheme() {
+    const cur = document.documentElement.getAttribute('data-theme');
+    applyTheme(cur==='dark' ? 'light' : 'dark');
+  }
+  // Apply saved theme on load
+  applyTheme(localStorage.getItem('tt-theme') || 'dark');
+
+  // ── FOLLOWING ──
+  function getFollowed() {
+    try { return JSON.parse(localStorage.getItem('tt-followed') || '["107780257626128497"]'); }
+    catch { return ['107780257626128497']; }
+  }
+  function setFollowed(ids) { localStorage.setItem('tt-followed', JSON.stringify(ids)); }
+  function isFollowing(id) { return getFollowed().includes(id); }
+  function toggleFollow(id) {
+    let f = getFollowed();
+    if (f.includes(id)) { f = f.filter(x=>x!==id); } else { f.push(id); }
+    setFollowed(f);
+    renderFollowingPage();
+    renderFeed();
+  }
+
+  // ── PAGE NAVIGATION ──
+  const PAGES = ['home','following','analytics'];
+  function showPage(page) {
+    PAGES.forEach(p => {
+      document.getElementById(`page-${p}`).classList.toggle('active', p===page);
+      document.getElementById(`nav-${p}`).classList.toggle('active', p===page);
+    });
+    if (page==='analytics') renderAnalytics();
+    if (page==='following')  renderFollowingPage();
   }
 
   // ── TABS ──
@@ -545,25 +630,25 @@
   // ── SELECT POST ──
   function selectPost(id) {
     selectedId = id;
-    document.querySelectorAll('.post-card').forEach(c => {
-      c.classList.toggle('selected', c.dataset.id === id);
-    });
+    document.querySelectorAll('.post-card').forEach(c => c.classList.toggle('selected', c.dataset.id===id));
     renderRightPanel(id);
   }
 
   // ── RENDER FEED ──
   function renderFeed(flashIds=[]) {
     const el = document.getElementById('feed');
-    const visible = tab==='signals'
-      ? posts.filter(p => sigMap[p.post_id]?.length)
-      : posts;
+    const followed = getFollowed();
+    let visible = posts.filter(p => followed.includes('107780257626128497')); // filter by followed accounts
+    if (tab==='signals') visible = visible.filter(p => sigMap[p.post_id]?.length);
 
     if (!visible.length) {
       el.innerHTML = `
         <div class="feed-empty">
           <div class="feed-empty-icon">📡</div>
-          <div class="feed-empty-title">Monitoring Truth Social</div>
-          <div class="feed-empty-sub">Watching <strong>@realDonaldTrump</strong> in real-time.<br>Posts and trade signals will appear here automatically.</div>
+          <div class="feed-empty-title">${followed.length ? 'Monitoring Truth Social' : 'No accounts followed'}</div>
+          <div class="feed-empty-sub">${followed.length
+            ? 'Watching <strong>@realDonaldTrump</strong> in real-time.<br>Posts and signals appear here automatically.'
+            : 'Go to <strong>Following</strong> to select accounts to track.'}</div>
         </div>`;
       return;
     }
@@ -572,17 +657,13 @@
       const cls = clsMap[p.post_id];
       const sig = sigMap[p.post_id]?.[0];
       const isFlash = flashIds.includes(p.post_id);
-
-      let pillHtml = '';
+      let pill = '';
       if (sig) {
-        const cls2 = `pill ${sig.direction==='BUY'?'pill-buy':'pill-sell'}`;
-        pillHtml = `<span class="${cls2}">${sig.direction==='BUY'?'↑':'↓'} ${esc(sig.instrument)} · ${sig.direction}</span>`;
+        pill = `<span class="pill ${sig.direction==='BUY'?'pill-buy':'pill-sell'}">${sig.direction==='BUY'?'↑':'↓'} ${esc(sig.instrument)} · ${sig.direction}</span>`;
       } else if (cls) {
-        pillHtml = `<span class="pill pill-none">${esc(cls.category)}</span>`;
+        pill = `<span class="pill pill-none">${esc(cls.category)}</span>`;
       }
-      const confHtml = cls?.confidence
-        ? `<span class="pill pill-conf">${Math.round(cls.confidence*100)}%</span>` : '';
-
+      const conf = cls?.confidence ? `<span class="pill pill-conf">${Math.round(cls.confidence*100)}%</span>` : '';
       return `
         <div class="post-card${selectedId===p.post_id?' selected':''}${isFlash?' flash':''}"
              data-id="${esc(p.post_id)}" onclick="selectPost('${esc(p.post_id)}')">
@@ -595,7 +676,7 @@
               <span class="post-age">${ago(p.posted_at||p.created_at)}</span>
             </div>
             <div class="post-text">${esc(p.content||'')}</div>
-            <div class="post-footer">${pillHtml}${confHtml}</div>
+            <div class="post-footer">${pill}${conf}</div>
           </div>
         </div>`;
     }).join('');
@@ -605,15 +686,12 @@
   function renderRightPanel(id) {
     const emptyEl = document.getElementById('rp-empty');
     const tradeEl = document.getElementById('rp-trade');
-
     if (!id) { emptyEl.style.display='flex'; tradeEl.style.display='none'; return; }
 
     const post = posts.find(p=>p.post_id===id);
     const cls  = clsMap[id];
     const sig  = sigMap[id]?.[0];
-
-    emptyEl.style.display='none';
-    tradeEl.style.display='block';
+    emptyEl.style.display='none'; tradeEl.style.display='block';
 
     if (!sig) {
       tradeEl.innerHTML = `
@@ -622,62 +700,43 @@
           <div class="pe-text">${esc(post?.content||'')}</div>
           ${cls?.reasoning?`<div class="pe-reasoning">${esc(cls.reasoning)}</div>`:''}
         </div>
-        ${cls?`
-        <div class="levels-card">
-          <div class="levels-head">AI Classification</div>
+        ${cls?`<div class="levels-card"><div class="levels-head">AI Classification</div>
           <div style="padding:14px;font-size:14px">
-            <span style="font-weight:700">${esc(cls.category)}</span>
-            ${cls.confidence?` · <span style="color:var(--text-2)">${Math.round(cls.confidence*100)}% confidence</span>`:''}
-          </div>
-        </div>`:''}
-        <div class="no-signal-msg">No trade signal fired for this post.<br><span style="font-size:12px">Confidence below 75% threshold or PERSONAL_NOISE.</span></div>`;
+            <strong>${esc(cls.category)}</strong>${cls.confidence?` · <span style="color:var(--text-2)">${Math.round(cls.confidence*100)}% confidence</span>`:''}
+          </div></div>`:''}
+        <div class="no-signal-msg">No trade signal fired.<br><span style="font-size:12px">Below 75% confidence threshold or classified as personal noise.</span></div>`;
       return;
     }
 
-    const outcome = sig.outcome || 'OPEN';
+    const outcome = sig.outcome||'OPEN';
     const badge = {
-      OPEN:       '<span class="outcome-badge ob-open">⏳ Trade Open</span>',
-      TARGET_HIT: '<span class="outcome-badge ob-target">✅ Target Hit</span>',
-      STOP_HIT:   '<span class="outcome-badge ob-stop">❌ Stop Hit</span>',
-      TIME_STOP:  '<span class="outcome-badge ob-time">⏰ Time Stop</span>',
-    }[outcome] || '';
+      OPEN:'<span class="outcome-badge ob-open">⏳ Trade Open</span>',
+      TARGET_HIT:'<span class="outcome-badge ob-target">✅ Target Hit</span>',
+      STOP_HIT:'<span class="outcome-badge ob-stop">❌ Stop Hit</span>',
+      TIME_STOP:'<span class="outcome-badge ob-time">⏰ Time Stop</span>',
+    }[outcome]||'';
 
     const pnl = sig.pnl_pct;
-    const pnlBlock = pnl!=null ? `
+    const pnlBlock = pnl!=null?`
       <div class="pnl-card">
-        <div>
-          <div class="pnl-label">Hypothetical P&L</div>
-          <div class="pnl-number ${pnl>=0?'pnl-pos':'pnl-neg'}">${pnl>=0?'+':''}${pnl.toFixed(2)}%</div>
-        </div>
+        <div><div class="pnl-label">Hypothetical P&L</div>
+          <div class="pnl-number ${pnl>=0?'pnl-pos':'pnl-neg'}">${pnl>=0?'+':''}${pnl.toFixed(2)}%</div></div>
         <div style="font-size:36px">${pnl>=0?'🚀':'📉'}</div>
-      </div>` : '';
-
-    const stopLbl = sig.direction==='BUY'?'Stop ↓':'Stop ↑';
-    const tgtLbl  = sig.direction==='BUY'?'Target ↑':'Target ↓';
+      </div>`:'';
 
     tradeEl.innerHTML = `
       <div class="rp-instr-row">
         <span class="rp-instr">${esc(sig.instrument)}</span>
         <span class="rp-dir ${sig.direction==='BUY'?'rp-dir-buy':'rp-dir-sell'}">${sig.direction==='BUY'?'↑ LONG':'↓ SHORT'}</span>
       </div>
-      ${badge}
-      ${pnlBlock}
+      ${badge}${pnlBlock}
       <div class="chart-embed" id="chart-embed"></div>
       <div class="levels-card">
         <div class="levels-head">Trade Levels</div>
         <div class="levels-grid">
-          <div class="level-cell">
-            <div class="lc-lbl">Entry</div>
-            <div class="lc-val lc-entry">${fmtP(sig.entry_price)}</div>
-          </div>
-          <div class="level-cell">
-            <div class="lc-lbl">${stopLbl}</div>
-            <div class="lc-val lc-stop">${fmtP(sig.stop_price)}</div>
-          </div>
-          <div class="level-cell">
-            <div class="lc-lbl">${tgtLbl}</div>
-            <div class="lc-val lc-tgt">${fmtP(sig.target_price)}</div>
-          </div>
+          <div class="level-cell"><div class="lc-lbl">Entry</div><div class="lc-val lc-entry">${fmtP(sig.entry_price)}</div></div>
+          <div class="level-cell"><div class="lc-lbl">${sig.direction==='BUY'?'Stop ↓':'Stop ↑'}</div><div class="lc-val lc-stop">${fmtP(sig.stop_price)}</div></div>
+          <div class="level-cell"><div class="lc-lbl">${sig.direction==='BUY'?'Target ↑':'Target ↓'}</div><div class="lc-val lc-tgt">${fmtP(sig.target_price)}</div></div>
         </div>
       </div>
       <div class="post-excerpt">
@@ -685,9 +744,7 @@
         <div class="pe-text">${esc(post?.content||'')}</div>
         ${cls?.reasoning?`<div class="pe-reasoning">"${esc(cls.reasoning)}"</div>`:''}
       </div>
-      <button class="btn-chart" onclick="window.open('${tvUrl(sig.instrument)}','_blank')">
-        📈 Open Full Chart
-      </button>`;
+      <button class="btn-full" onclick="window.open('${tvUrl(sig.instrument)}','_blank')">📈 Open Full Chart</button>`;
 
     renderChart(tvSym(sig.instrument));
   }
@@ -695,133 +752,142 @@
   function renderChart(sym) {
     const wrap = document.getElementById('chart-embed');
     if (!wrap) return;
-    wrap.innerHTML = '';
-    const outer = document.createElement('div');
-    outer.style.cssText = 'height:200px;width:100%';
-    const inner = document.createElement('div');
-    inner.className = 'tradingview-widget-container__widget';
-    inner.style.cssText = 'height:200px;width:100%';
-    const s = document.createElement('script');
-    s.src = 'https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js';
-    s.async = true;
-    s.innerHTML = JSON.stringify({
-      symbol: sym, width:'100%', height:200,
-      locale:'en', dateRange:'1D', colorTheme:'dark',
-      trendLineColor:'#1d9bf0',
-      underLineColor:'rgba(29,155,240,0.08)',
-      underLineBottomColor:'rgba(29,155,240,0)',
+    wrap.innerHTML='';
+    const theme = document.documentElement.getAttribute('data-theme')||'dark';
+    const outer=document.createElement('div'); outer.style.cssText='height:200px;width:100%';
+    const inner=document.createElement('div'); inner.style.cssText='height:200px;width:100%';
+    const s=document.createElement('script');
+    s.src='https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js';
+    s.async=true;
+    s.innerHTML=JSON.stringify({
+      symbol:sym, width:'100%', height:200, locale:'en', dateRange:'1D',
+      colorTheme:theme, trendLineColor:'#1d9bf0',
+      underLineColor:'rgba(29,155,240,0.08)', underLineBottomColor:'rgba(29,155,240,0)',
       isTransparent:true, autosize:true,
       largeChartUrl:'https://www.tradingview.com/chart/?symbol='+encodeURIComponent(sym),
     });
-    outer.appendChild(inner); outer.appendChild(s);
-    wrap.appendChild(outer);
+    outer.appendChild(inner); outer.appendChild(s); wrap.appendChild(outer);
+  }
+
+  // ── FOLLOWING PAGE ──
+  function renderFollowingPage() {
+    const activeEl = document.getElementById('accounts-active');
+    const soonEl   = document.getElementById('accounts-soon');
+    const liveAccounts = ALL_ACCOUNTS.filter(a=>a.live);
+    const soonAccounts = ALL_ACCOUNTS.filter(a=>!a.live);
+
+    activeEl.innerHTML = liveAccounts.map(a => {
+      const following = isFollowing(a.id);
+      return `
+        <div class="account-card">
+          <div class="account-avatar" style="background:${a.gradient}">${a.initials}</div>
+          <div class="account-info">
+            <div class="account-name">${esc(a.name)}</div>
+            <div class="account-handle">${esc(a.handle)} · ${esc(a.platform)}</div>
+            <div class="account-meta">${esc(a.desc)}</div>
+            <div class="account-trading">● Trading signals active</div>
+          </div>
+          <button class="follow-toggle ${following?'following':'not-following'}"
+                  onclick="toggleFollow('${a.id}')">
+            ${following?'Following':'Follow'}
+          </button>
+        </div>`;
+    }).join('');
+
+    soonEl.innerHTML = soonAccounts.map(a => `
+      <div class="account-card coming-soon">
+        <div class="account-avatar" style="background:${a.gradient}">${a.initials}</div>
+        <div class="account-info">
+          <div class="account-name">${esc(a.name)}</div>
+          <div class="account-handle">${esc(a.handle)} · ${esc(a.platform)}</div>
+          <div class="account-meta">${esc(a.desc)}</div>
+        </div>
+        <span class="coming-badge">Coming soon</span>
+      </div>`).join('');
   }
 
   // ── ANALYTICS ──
   function renderAnalytics() {
-    const sigs = Object.values(sigMap).flat();
+    const sigs  = Object.values(sigMap).flat();
     const total = sigs.length;
     const wins  = sigs.filter(s=>s.outcome==='TARGET_HIT').length;
     const losses= sigs.filter(s=>s.outcome==='STOP_HIT').length;
     const open  = sigs.filter(s=>!s.outcome||s.outcome==='OPEN').length;
     const decided = wins+losses;
-    const rate = decided>0 ? Math.round(wins/decided*100) : null;
-    const pnl  = sigs.reduce((a,s)=>a+(s.pnl_pct||0),0);
-
-    document.getElementById('ap-grid').innerHTML = [
-      ['Total Signals',    total||'—',  ''],
-      ['Target Hits',      total?wins:'—',   'color:var(--green)'],
-      ['Stop Hits',        total?losses:'—', 'color:var(--red)'],
-      ['Open Trades',      total?open:'—',   'color:var(--gold)'],
-      ['Win Rate',         rate!=null?rate+'%':'—', rate!=null?(rate>=50?'color:var(--green)':'color:var(--red)'):''],
-      ['Hyp. P&L',         total?(pnl>=0?'+':'')+pnl.toFixed(2)+'%':'—', pnl>=0?'color:var(--green)':'color:var(--red)'],
-      ['Posts Tracked',    posts.length||'—', ''],
-    ].map(([label,value,style])=>`
-      <div class="ap-box">
-        <div class="ap-box-label">${label}</div>
-        <div class="ap-box-value" style="${style}">${value}</div>
-      </div>`).join('');
+    const rate  = decided>0?Math.round(wins/decided*100):null;
+    const pnl   = sigs.reduce((a,s)=>a+(s.pnl_pct||0),0);
+    document.getElementById('ap-grid').innerHTML=[
+      ['Total Signals', total||'—', ''],
+      ['Target Hits',   total?wins:'—',   'color:var(--green)'],
+      ['Stop Hits',     total?losses:'—', 'color:var(--red)'],
+      ['Open Trades',   total?open:'—',   'color:var(--gold)'],
+      ['Win Rate',      rate!=null?rate+'%':'—', rate!=null?(rate>=50?'color:var(--green)':'color:var(--red)'):''],
+      ['Hyp. P&L',      total?(pnl>=0?'+':'')+pnl.toFixed(2)+'%':'—', pnl>=0?'color:var(--green)':'color:var(--red)'],
+      ['Posts Tracked', posts.length||'—', ''],
+    ].map(([l,v,s])=>`<div class="ap-box"><div class="ap-box-label">${l}</div><div class="ap-box-value" style="${s}">${v}</div></div>`).join('');
   }
 
-  // ── NEW POSTS BANNER ──
+  // ── NEW POSTS ──
   function showNewPosts() {
     document.getElementById('new-banner').classList.remove('show');
     renderFeed(pendingNewIds);
-    pendingNewIds = [];
-    // Re-select if the selected post is still there
-    if (selectedId) {
-      setTimeout(()=>{ const c=document.querySelector(`[data-id="${selectedId}"]`); if(c) c.classList.add('selected'); },0);
-    }
+    pendingNewIds=[];
+    if (selectedId) setTimeout(()=>{ const c=document.querySelector(`[data-id="${selectedId}"]`); if(c) c.classList.add('selected'); },0);
   }
 
-  // ── DATA FETCH ──
+  // ── DATA ──
   async function sb(path) {
-    const r = await fetch(`${SB_URL}/rest/v1/${path}`, {
-      headers:{ apikey:SB_KEY, Authorization:`Bearer ${SB_KEY}` }
-    });
+    const r=await fetch(`${SB_URL}/rest/v1/${path}`,{headers:{apikey:SB_KEY,Authorization:`Bearer ${SB_KEY}`}});
     if (!r.ok) throw new Error(r.status);
     return r.json();
   }
-
   async function loadData(isRefresh=false) {
     try {
-      const [newPosts, clsList, sigList] = await Promise.all([
+      const [newPosts,clsList,sigList]=await Promise.all([
         sb('posts?select=post_id,posted_at,content&order=posted_at.desc&limit=50'),
         sb('classifications?select=*&order=created_at.desc&limit=200'),
         sb('signals?select=*&order=created_at.desc&limit=200'),
       ]);
-
-      const newClsMap={}, newSigMap={};
-      for (const c of clsList) { if (!newClsMap[c.post_id]) newClsMap[c.post_id]=c; }
-      for (const s of sigList) {
-        if (!newSigMap[s.post_id]) newSigMap[s.post_id]=[];
-        newSigMap[s.post_id].push(s);
-      }
+      const nc={}, ns={};
+      for (const c of clsList) { if (!nc[c.post_id]) nc[c.post_id]=c; }
+      for (const s of sigList) { if (!ns[s.post_id]) ns[s.post_id]=[]; ns[s.post_id].push(s); }
 
       if (isRefresh) {
-        const existingIds = new Set(posts.map(p=>p.post_id));
-        const freshIds = newPosts.filter(p=>!existingIds.has(p.post_id)).map(p=>p.post_id);
-        if (freshIds.length) {
-          pendingNewIds = freshIds;
-          document.getElementById('new-banner').classList.add('show');
-        }
+        const existing=new Set(posts.map(p=>p.post_id));
+        const fresh=newPosts.filter(p=>!existing.has(p.post_id)).map(p=>p.post_id);
+        if (fresh.length) { pendingNewIds=fresh; document.getElementById('new-banner').classList.add('show'); }
       }
 
-      posts = newPosts; clsMap = newClsMap; sigMap = newSigMap;
+      posts=newPosts; clsMap=nc; sigMap=ns;
 
       if (!isRefresh) {
         renderFeed();
-        // Auto-select the most recent post with a signal
-        const first = posts.find(p=>sigMap[p.post_id]?.length);
+        const first=posts.find(p=>sigMap[p.post_id]?.length);
         if (first) selectPost(first.post_id);
       } else {
-        // Silently update data; if no pending new posts just re-render in place
         if (!pendingNewIds.length) renderFeed();
         if (selectedId) renderRightPanel(selectedId);
       }
 
-      lastLoad = new Date();
-      updateStatus();
+      lastLoad=new Date(); updateStatus();
     } catch(e) {
       console.error(e);
-      document.getElementById('monitor-status').textContent = 'Connection error';
+      document.getElementById('monitor-status').textContent='Connection error';
     }
   }
 
-  // ── MONITOR STATUS COUNTER ──
   function updateStatus() {
     if (!lastLoad) return;
-    const s = Math.floor((Date.now()-lastLoad.getTime())/1000);
-    const el = document.getElementById('monitor-status');
-    if (s < 5)  el.textContent = 'Just checked';
-    else if (s < 60)  el.textContent = `Checked ${s}s ago`;
-    else el.textContent = `Checked ${Math.floor(s/60)}m ago`;
+    const s=Math.floor((Date.now()-lastLoad.getTime())/1000);
+    const el=document.getElementById('monitor-status');
+    if (s<5)   el.textContent='Just checked';
+    else if (s<60) el.textContent=`Checked ${s}s ago`;
+    else       el.textContent=`Checked ${Math.floor(s/60)}m ago`;
   }
 
-  // ── INIT ──
   loadData(false);
-  setInterval(()=>loadData(true), 30000);
-  setInterval(updateStatus, 1000);
+  setInterval(()=>loadData(true),30000);
+  setInterval(updateStatus,1000);
 </script>
 </body>
 </html>
