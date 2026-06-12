@@ -1,4 +1,6 @@
 import asyncio
+import base64
+import json
 import logging
 from datetime import datetime, timezone
 from typing import Optional
@@ -9,6 +11,25 @@ logger = logging.getLogger(__name__)
 
 MAX_RETRIES = 3
 RETRY_DELAY = 1.0
+
+
+def _jwt_role(key: str) -> Optional[str]:
+    """Return the Supabase JWT role when the key is a legacy JWT key."""
+    try:
+        parts = key.split(".")
+        if len(parts) != 3:
+            return None
+        payload = parts[1] + "=" * (-len(parts[1]) % 4)
+        decoded = base64.urlsafe_b64decode(payload.encode("ascii"))
+        return json.loads(decoded).get("role")
+    except Exception:
+        return None
+
+
+def _is_public_client_key(key: str) -> bool:
+    if key.startswith(("sb_publishable_", "sb_anon_")):
+        return True
+    return _jwt_role(key) == "anon"
 
 
 async def _with_retry(fn, max_retries: int = MAX_RETRIES):
@@ -33,7 +54,21 @@ async def _with_retry(fn, max_retries: int = MAX_RETRIES):
 
 class SupabaseLogger:
     def __init__(self, url: str, key: str):
+        if _is_public_client_key(key):
+            raise ValueError(
+                "SupabaseLogger needs a server-only service role key. "
+                "Set SUPABASE_SERVICE_ROLE_KEY for the trading engine; keep the anon/publishable key only in the dashboard."
+            )
         self.client: Client = create_client(url, key)
+
+    async def has_posts(self) -> bool:
+        result = await asyncio.to_thread(
+            lambda: self.client.table("posts")
+            .select("post_id", count="exact")
+            .limit(1)
+            .execute()
+        )
+        return bool(result.count)
 
     async def log_post(self, post: dict) -> Optional[str]:
         try:

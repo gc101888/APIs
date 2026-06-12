@@ -128,7 +128,7 @@ if grep -q "^GEMINI_API_KEY=$" "$INSTALL_DIR/.env" 2>/dev/null; then
     echo "   Keys needed:"
     echo "     GEMINI_API_KEY      — aistudio.google.com (free)"
     echo "     SUPABASE_URL        — your Supabase project URL"
-    echo "     SUPABASE_KEY        — your Supabase anon key"
+    echo "     SUPABASE_SERVICE_ROLE_KEY — your Supabase service role key (server only)"
     echo "     TELEGRAM_BOT_TOKEN  — from @BotFather"
     echo "     TELEGRAM_CHAT_ID    — your Telegram user/chat ID"
     echo ""

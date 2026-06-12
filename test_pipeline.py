@@ -110,15 +110,15 @@ async def main() -> None:
 
     # Optional integrations — silently skip if not configured
     supabase = None
-    if os.getenv("SUPABASE_URL") and os.getenv("SUPABASE_KEY"):
+    if os.getenv("SUPABASE_URL") and os.getenv("SUPABASE_SERVICE_ROLE_KEY"):
         from db_logging.supabase_logger import SupabaseLogger
         supabase = SupabaseLogger(
             url=os.environ["SUPABASE_URL"],
-            key=os.environ["SUPABASE_KEY"],
+            key=os.environ["SUPABASE_SERVICE_ROLE_KEY"],
         )
         logger.info("Supabase: connected")
     else:
-        logger.info("Supabase: not configured (set SUPABASE_URL + SUPABASE_KEY to enable)")
+        logger.info("Supabase: not configured (set SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY to enable)")
 
     telegram = None
     if os.getenv("TELEGRAM_BOT_TOKEN") and os.getenv("TELEGRAM_CHAT_ID"):

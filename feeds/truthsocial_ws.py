@@ -21,18 +21,31 @@ def _strip_html(text: str) -> str:
 
 
 class TruthSocialFeed:
-    def __init__(self, account_id: str, on_post: Callable, access_token: Optional[str] = None):
+    def __init__(
+        self,
+        account_id: str,
+        on_post: Callable,
+        access_token: Optional[str] = None,
+        backfill_on_start: bool = False,
+        on_backfill_post: Optional[Callable] = None,
+    ):
         self.account_id = account_id
         self.on_post = on_post
         self.access_token = access_token
+        self.backfill_on_start = backfill_on_start
+        self.on_backfill_post = on_backfill_post or on_post
         self._seen_ids: Set[str] = set()
         self._running = False
         self._last_seen_id: Optional[str] = None  # for REST since_id pagination
 
     async def start(self) -> None:
         self._running = True
-        # Seed seen IDs from the last few posts so we don't re-fire old posts on startup
-        await self._poll_rest(seed_only=True)
+        if self.backfill_on_start:
+            logger.info("[%s] Backfilling recent Truth Social posts", datetime.now(timezone.utc).isoformat())
+            await self._poll_rest(backfill=True)
+        else:
+            # Seed seen IDs from the last few posts so we don't re-fire old posts on startup
+            await self._poll_rest(seed_only=True)
         # Run WebSocket and REST poller concurrently
         await asyncio.gather(
             self._ws_loop(),
@@ -122,7 +135,7 @@ class TruthSocialFeed:
             except Exception as exc:
                 logger.warning("[%s] REST poll error: %s", datetime.now(timezone.utc).isoformat(), exc)
 
-    async def _poll_rest(self, seed_only: bool = False) -> None:
+    async def _poll_rest(self, seed_only: bool = False, backfill: bool = False) -> None:
         url = f"{REST_BASE}/accounts/{self.account_id}/statuses"
         params = {"limit": 20, "exclude_replies": "true", "exclude_reblogs": "true"}
         if self._last_seen_id and not seed_only:
@@ -159,12 +172,15 @@ class TruthSocialFeed:
         # Process newest-last so they fire in chronological order
         new_posts = [s for s in reversed(statuses) if s.get("id") not in self._seen_ids]
         for payload in new_posts:
-            logger.info("[%s] REST fallback caught post %s", datetime.now(timezone.utc).isoformat(), payload.get("id"))
-            await self._emit_if_new(payload)
+            if backfill:
+                logger.info("[%s] Backfilling post %s", datetime.now(timezone.utc).isoformat(), payload.get("id"))
+            else:
+                logger.info("[%s] REST fallback caught post %s", datetime.now(timezone.utc).isoformat(), payload.get("id"))
+            await self._emit_if_new(payload, backfill=backfill)
 
     # ── Shared emission ─────────────────────────────────────────────────────────
 
-    async def _emit_if_new(self, payload: dict) -> None:
+    async def _emit_if_new(self, payload: dict, backfill: bool = False) -> None:
         post_id = payload.get("id")
         if not post_id or post_id in self._seen_ids:
             return
@@ -189,4 +205,5 @@ class TruthSocialFeed:
             post["content"],
         )
 
-        asyncio.create_task(self.on_post(post))
+        handler = self.on_backfill_post if backfill else self.on_post
+        asyncio.create_task(handler(post))

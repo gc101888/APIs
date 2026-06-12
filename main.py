@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 REQUIRED_ENV = [
     "GEMINI_API_KEY",
     "SUPABASE_URL",
-    "SUPABASE_KEY",
+    "SUPABASE_SERVICE_ROLE_KEY",
     "TELEGRAM_BOT_TOKEN",
     "TELEGRAM_CHAT_ID",
 ]
@@ -62,7 +62,7 @@ async def main() -> None:
 
     supabase = SupabaseLogger(
         url=os.environ["SUPABASE_URL"],
-        key=os.environ["SUPABASE_KEY"],
+        key=os.environ["SUPABASE_SERVICE_ROLE_KEY"],
     )
     telegram = TelegramAlerter(
         token=os.environ["TELEGRAM_BOT_TOKEN"],
@@ -87,10 +87,22 @@ async def main() -> None:
         await supabase.log_post(post)
         await classifier.classify(post)
 
+    async def on_backfill_post(post: dict) -> None:
+        await supabase.log_post(post)
+
+    backfill_on_start = os.getenv("BACKFILL_ON_START")
+    should_backfill = (
+        backfill_on_start.lower() in {"1", "true", "yes"}
+        if backfill_on_start is not None
+        else not await supabase.has_posts()
+    )
+
     feed = TruthSocialFeed(
         account_id=os.getenv("TRUTH_SOCIAL_ACCOUNT_ID", "107780257626128497"),
         on_post=on_post,
         access_token=os.getenv("TRUTH_SOCIAL_ACCESS_TOKEN") or None,
+        backfill_on_start=should_backfill,
+        on_backfill_post=on_backfill_post,
     )
 
     x_poller = None

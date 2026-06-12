@@ -54,7 +54,7 @@ No broker connection. No real money. Signals and hypothetical P&L tracking only.
 
 - Python 3.12+
 - Google Gemini API key (free — aistudio.google.com)
-- Supabase project (URL + anon key)
+- Supabase project (URL + service role key for the Python engine, anon key for the dashboard)
 - Telegram bot token + chat ID
 
 ---
@@ -128,6 +128,10 @@ alter table signals        enable row level security;
 create policy "anon read posts"           on posts          for select using (true);
 create policy "anon read classifications" on classifications for select using (true);
 create policy "anon read signals"         on signals        for select using (true);
+
+-- Keep browser keys read-only. The Python engine must use SUPABASE_SERVICE_ROLE_KEY
+-- so it can bypass RLS for inserts/updates from the trusted server process.
+revoke insert, update, delete, truncate on posts, classifications, signals from anon, authenticated;
 ```
 
 ---
@@ -210,6 +214,12 @@ Fixed 1:3 risk/reward on every signal:
 - **Outcomes**: `TARGET_HIT` | `STOP_HIT` | `TIME_STOP`
 
 All outcomes are **hypothetical** — no real account connected.
+
+On first run against an empty Supabase database, the engine backfills recent
+Truth Social posts into `posts` so the dashboard is not blank. Backfilled posts
+are not classified and do not fire stale paper trades. Set
+`BACKFILL_ON_START=false` to disable this, or `BACKFILL_ON_START=true` to force
+it.
 
 ---
 
