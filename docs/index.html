@@ -461,9 +461,59 @@
     .mt-symbol { display: block; font-size: 14px; font-weight: 800; }
     .mt-name { display: block; color: var(--text-2); font-size: 11px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .chart-embed.market-chart {
+      position: relative;
       height: min(680px, calc(100vh - 245px));
       min-height: 560px;
       background: var(--surface);
+    }
+    .chart-tweet-marker {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 50%;
+      width: 0;
+      z-index: 6;
+      pointer-events: none;
+      border-left: 2px solid var(--accent);
+      box-shadow: 0 0 14px rgba(29,155,240,0.65);
+    }
+    .chart-tweet-marker::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -5px;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 12px var(--accent);
+    }
+    .chart-marker-label {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      min-width: 190px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid rgba(29,155,240,0.45);
+      background: rgba(0,0,0,0.82);
+      color: white;
+      font-size: 11px;
+      line-height: 1.35;
+      z-index: 7;
+      pointer-events: none;
+    }
+    [data-theme="light"] .chart-marker-label {
+      background: rgba(255,255,255,0.92);
+      color: #0f1419;
+    }
+    .cml-title {
+      display: block;
+      color: var(--accent);
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 3px;
     }
     .tweet-marker {
       display: grid; grid-template-columns: auto 1fr; gap: 8px 10px;
@@ -1178,10 +1228,10 @@
       </div>
       <button class="btn-full" onclick="window.open('${tvUrl(active.symbol)}','_blank')">Open Full Chart</button>`;
 
-    renderChart(tvSym(active.symbol));
+    renderChart(tvSym(active.symbol), exactTime, entryText);
   }
 
-  function renderChart(sym) {
+  function renderChart(sym, markerTime='', markerText='') {
     const wrap = document.getElementById('chart-embed');
     if (!wrap) return;
     wrap.innerHTML='';
@@ -1201,7 +1251,7 @@
       width:'100%',
       height:chartHeight,
       symbol:sym,
-      interval:'5',
+      interval:'1',
       timezone:'Etc/UTC',
       theme:theme,
       style:'2',
@@ -1216,6 +1266,13 @@
     outer.appendChild(inner);
     outer.appendChild(s);
     wrap.appendChild(outer);
+    const marker = document.createElement('div');
+    marker.className = 'chart-tweet-marker';
+    const label = document.createElement('div');
+    label.className = 'chart-marker-label';
+    label.innerHTML = `<span class="cml-title">Tweet impact marker</span>${esc(markerTime)}<br>${esc(markerText)}`;
+    wrap.appendChild(marker);
+    wrap.appendChild(label);
   }
 
   // ── FOLLOWING PAGE ──
