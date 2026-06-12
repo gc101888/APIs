@@ -430,16 +430,16 @@
     /* ── RESPONSIVE ── */
     .market-head {
       background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
-      padding: 14px; box-shadow: var(--shadow);
+      padding: 10px 12px; box-shadow: var(--shadow);
     }
     .mh-kicker {
       display: flex; align-items: center; justify-content: space-between; gap: 8px;
       font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px;
-      color: var(--text-2); margin-bottom: 8px;
+      color: var(--text-2); margin-bottom: 6px;
     }
     .mh-time { color: var(--text-3); font-weight: 600; text-transform: none; letter-spacing: 0; }
     .mh-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
-    .mh-symbol { font-size: 30px; line-height: 1; font-weight: 800; }
+    .mh-symbol { font-size: 26px; line-height: 1; font-weight: 800; }
     .mh-name { font-size: 13px; color: var(--text-2); margin-top: 4px; }
     .mh-bias {
       flex-shrink: 0; padding: 6px 12px; border-radius: 999px;
@@ -448,8 +448,8 @@
     }
     .mh-bias.up { background: var(--green-dim); color: var(--green); border-color: rgba(0,186,124,0.3); }
     .mh-bias.down { background: var(--red-dim); color: var(--red); border-color: rgba(244,33,46,0.3); }
-    .mh-thesis { margin-top: 12px; font-size: 13px; line-height: 1.55; color: var(--text-1); }
-    .mh-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+    .mh-thesis { margin-top: 8px; font-size: 12px; line-height: 1.45; color: var(--text-1); }
+    .mh-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
     .market-tabs { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; }
     .market-tab {
       min-height: 54px; padding: 10px; border-radius: 10px;
@@ -460,7 +460,40 @@
     .market-tab.active { border-color: var(--accent); background: var(--accent-dim); }
     .mt-symbol { display: block; font-size: 14px; font-weight: 800; }
     .mt-name { display: block; color: var(--text-2); font-size: 11px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .chart-embed.market-chart { min-height: 520px; background: var(--surface); }
+    .chart-embed.market-chart {
+      height: min(680px, calc(100vh - 245px));
+      min-height: 560px;
+      background: var(--surface);
+    }
+    .tweet-marker {
+      display: grid; grid-template-columns: auto 1fr; gap: 8px 10px;
+      align-items: center; padding: 10px 12px; border: 1px solid var(--border);
+      border-radius: 12px; background: var(--surface);
+    }
+    .tm-label {
+      font-size: 10px; font-weight: 800; text-transform: uppercase;
+      letter-spacing: 0.6px; color: var(--text-3);
+    }
+    .tm-value { font-size: 13px; font-weight: 700; color: var(--text-1); }
+    .tm-line {
+      grid-column: 1 / -1; position: relative; height: 8px;
+      border-radius: 999px; background: var(--surface-2); overflow: hidden;
+    }
+    .tm-line::before {
+      content: ''; position: absolute; left: 50%; top: 0; bottom: 0; width: 2px;
+      background: var(--accent); box-shadow: 0 0 10px var(--accent);
+    }
+    .tm-note { grid-column: 1 / -1; color: var(--text-2); font-size: 11px; line-height: 1.4; }
+    .confidence-card {
+      padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px;
+      background: var(--surface); display: grid; gap: 8px;
+    }
+    .conf-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+    .conf-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-3); }
+    .conf-value { font-size: 18px; font-weight: 800; color: var(--text-1); }
+    .conf-track { height: 8px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+    .conf-fill { height: 100%; border-radius: 999px; background: var(--accent); }
+    .conf-meta { font-size: 12px; color: var(--text-2); line-height: 1.45; }
     .compact-post {
       background: transparent; border: 1px solid var(--border); border-radius: 12px;
       padding: 12px; color: var(--text-2);
@@ -476,12 +509,12 @@
     @media (max-width: 1300px) {
       .feed-col { flex-basis: 420px; min-width: 340px; }
       .right-panel { width: clamp(500px, 45vw, 620px); }
-      .chart-embed.market-chart { min-height: 460px; }
+      .chart-embed.market-chart { height: min(620px, calc(100vh - 235px)); min-height: 500px; }
     }
     @media (max-width: 1100px) {
       .feed-col { flex-basis: 390px; min-width: 320px; }
       .right-panel { width: 470px; }
-      .chart-embed.market-chart { min-height: 420px; }
+      .chart-embed.market-chart { height: min(560px, calc(100vh - 220px)); min-height: 460px; }
     }
     @media (max-width: 900px) {
       .sidebar { width: 72px; padding: 8px; }
@@ -1055,6 +1088,13 @@
       hour:'2-digit', minute:'2-digit', second:'2-digit',
       timeZoneName:'short'
     }) : 'No timestamp';
+    const entryText = sig?.entry_price ? `${active.symbol} entry ${fmtP(sig.entry_price)}` : `${active.symbol} watch point`;
+    const confPct = cls?.confidence != null ? Math.round(cls.confidence * 100) : null;
+    const confText = confPct != null ? `${confPct}%` : 'Awaiting AI';
+    const confWidth = confPct != null ? Math.max(4, Math.min(100, confPct)) : 0;
+    const confMeta = cls?.category
+      ? `${cls.category}${cls.direction ? ` · ${cls.direction}` : ''}`
+      : 'No classification has been written for this post yet.';
 
     emptyEl.style.display='none';
     tradeEl.style.display='block';
@@ -1107,6 +1147,22 @@
           ${sig?`<span class="pill ${sig.direction==='BUY'?'pill-buy':'pill-sell'}">${esc(sig.direction)} signal</span>`:''}
         </div>
       </div>
+      <div class="tweet-marker">
+        <div class="tm-label">Tweet time</div>
+        <div class="tm-value">${esc(exactTime)}</div>
+        <div class="tm-label">Chart marker</div>
+        <div class="tm-value">${esc(entryText)}</div>
+        <div class="tm-line"></div>
+        <div class="tm-note">Use the vertical marker as the tweet timestamp reference, then compare the candles immediately before and after that time.</div>
+      </div>
+      <div class="confidence-card">
+        <div class="conf-row">
+          <div class="conf-label">AI confidence</div>
+          <div class="conf-value">${esc(confText)}</div>
+        </div>
+        <div class="conf-track"><div class="conf-fill" style="width:${confWidth}%"></div></div>
+        <div class="conf-meta">${esc(confMeta)}</div>
+      </div>
       <div class="chart-embed market-chart" id="chart-embed"></div>
       <div class="market-tabs">
         ${markets.map(m => `<button class="market-tab ${m.symbol===active.symbol?'active':''}" onclick="setMarket('${esc(id)}','${esc(m.symbol)}')">
@@ -1130,17 +1186,20 @@
     if (!wrap) return;
     wrap.innerHTML='';
     const theme = document.documentElement.getAttribute('data-theme')||'dark';
+    const chartHeight = Math.max(520, Math.round(wrap.getBoundingClientRect().height || 620));
     const outer=document.createElement('div');
     outer.className='tradingview-widget-container';
-    outer.style.cssText='height:520px;width:100%';
+    outer.style.cssText=`height:${chartHeight}px;width:100%`;
     const inner=document.createElement('div');
     inner.className='tradingview-widget-container__widget';
-    inner.style.cssText='height:520px;width:100%';
+    inner.style.cssText=`height:${chartHeight}px;width:100%`;
     const s=document.createElement('script');
     s.src='https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
     s.async=true;
     s.innerHTML=JSON.stringify({
-      autosize:true,
+      autosize:false,
+      width:'100%',
+      height:chartHeight,
       symbol:sym,
       interval:'5',
       timezone:'Etc/UTC',
