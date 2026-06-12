@@ -261,7 +261,7 @@
 
     /* Right panel */
     .right-panel {
-      width: 360px; flex-shrink: 0;
+      width: 430px; flex-shrink: 0;
       position: sticky; top: 0; height: 100vh;
       overflow-y: auto; padding: 16px;
       display: flex; flex-direction: column; gap: 14px;
@@ -417,7 +417,52 @@
     .following-note strong { color: var(--accent); }
 
     /* ── RESPONSIVE ── */
-    @media (max-width: 1100px) { .right-panel { width: 300px; } }
+    .market-head {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+      padding: 14px; box-shadow: var(--shadow);
+    }
+    .mh-kicker {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px;
+      color: var(--text-2); margin-bottom: 8px;
+    }
+    .mh-time { color: var(--text-3); font-weight: 600; text-transform: none; letter-spacing: 0; }
+    .mh-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+    .mh-symbol { font-size: 30px; line-height: 1; font-weight: 800; }
+    .mh-name { font-size: 13px; color: var(--text-2); margin-top: 4px; }
+    .mh-bias {
+      flex-shrink: 0; padding: 6px 12px; border-radius: 999px;
+      font-size: 12px; font-weight: 800; border: 1px solid var(--border);
+      background: var(--surface-2); color: var(--text-2);
+    }
+    .mh-bias.up { background: var(--green-dim); color: var(--green); border-color: rgba(0,186,124,0.3); }
+    .mh-bias.down { background: var(--red-dim); color: var(--red); border-color: rgba(244,33,46,0.3); }
+    .mh-thesis { margin-top: 12px; font-size: 13px; line-height: 1.55; color: var(--text-1); }
+    .mh-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+    .market-tabs { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; }
+    .market-tab {
+      min-height: 54px; padding: 10px; border-radius: 10px;
+      border: 1px solid var(--border); background: var(--surface);
+      text-align: left; transition: background 0.15s, border-color 0.15s;
+    }
+    .market-tab:hover { background: var(--surface-2); }
+    .market-tab.active { border-color: var(--accent); background: var(--accent-dim); }
+    .mt-symbol { display: block; font-size: 14px; font-weight: 800; }
+    .mt-name { display: block; color: var(--text-2); font-size: 11px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .chart-embed.market-chart { min-height: 320px; background: var(--surface); }
+    .compact-post {
+      background: transparent; border: 1px solid var(--border); border-radius: 12px;
+      padding: 12px; color: var(--text-2);
+    }
+    .cp-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-3); margin-bottom: 6px; }
+    .cp-text { font-size: 13px; line-height: 1.55; color: var(--text-2); max-height: 86px; overflow: auto; }
+    .impact-empty {
+      border: 1px dashed var(--border); border-radius: 12px; padding: 14px;
+      color: var(--text-2); font-size: 13px; line-height: 1.55;
+      background: var(--surface);
+    }
+
+    @media (max-width: 1100px) { .right-panel { width: 340px; } }
     @media (max-width: 900px) {
       .sidebar { width: 72px; padding: 8px; }
       .nav-label, .monitor-box { display: none; }
@@ -536,7 +581,60 @@
     AAPL:'NASDAQ:AAPL', PLTR:'NASDAQ:PLTR', TSLA:'NASDAQ:TSLA',
     NVDA:'NASDAQ:NVDA', MSFT:'NASDAQ:MSFT', AMZN:'NASDAQ:AMZN',
     META:'NASDAQ:META', DJT:'NASDAQ:DJT', 'BTC-USD':'BINANCE:BTCUSDT',
+    XLE:'AMEX:XLE', USO:'AMEX:USO', TLT:'NASDAQ:TLT', UUP:'AMEX:UUP',
+    XAR:'AMEX:XAR', ITA:'BATS:ITA',
   };
+
+  const MARKET_INFO = {
+    SPY:{ name:'S&P 500 ETF', bias:'Market beta' },
+    QQQ:{ name:'Nasdaq 100 ETF', bias:'Growth risk' },
+    GLD:{ name:'Gold ETF', bias:'Safe haven' },
+    BTC:{ name:'Bitcoin', bias:'Crypto risk' },
+    DJT:{ name:'Trump Media', bias:'Direct Trump beta' },
+    TLT:{ name:'20Y Treasury ETF', bias:'Rates' },
+    UUP:{ name:'US Dollar ETF', bias:'Dollar' },
+    XLE:{ name:'Energy ETF', bias:'Energy' },
+    USO:{ name:'Oil ETF', bias:'Crude oil' },
+    XAR:{ name:'Aerospace & defense', bias:'Defense' },
+    ITA:{ name:'Defense ETF', bias:'Defense' },
+    PLTR:{ name:'Palantir', bias:'Single stock' },
+    TSLA:{ name:'Tesla', bias:'Single stock' },
+    NVDA:{ name:'Nvidia', bias:'Single stock' },
+    AAPL:{ name:'Apple', bias:'Single stock' },
+    MSFT:{ name:'Microsoft', bias:'Single stock' },
+    AMZN:{ name:'Amazon', bias:'Single stock' },
+    META:{ name:'Meta', bias:'Single stock' },
+  };
+
+  const MARKET_RULES = [
+    { re:/tariff|china|trade war|import|export|deal/i, picks:[
+      ['SPY','down','Tariff and trade headlines usually hit broad US equity risk first.'],
+      ['QQQ','down','Large-cap growth tends to react quickly to policy shock.'],
+      ['GLD','up','Gold is the clean risk-off cross-check.'],
+      ['UUP','up','Trade stress can support the dollar.'],
+    ]},
+    { re:/oil|energy|gas|pipeline|drill|opec|saudi|iran|crude/i, picks:[
+      ['USO','up','Energy policy and Middle East headlines often move crude first.'],
+      ['XLE','up','Energy equities are the listed proxy for oil-sensitive moves.'],
+      ['SPY','mixed','Broad market reaction depends on whether oil is inflationary or growth-positive.'],
+    ]},
+    { re:/war|military|defense|pentagon|department of war|missile|nato|ukraine|russia/i, picks:[
+      ['ITA','up','Defense contractors are the direct equity proxy.'],
+      ['XAR','up','Aerospace and defense basket for military-spend headlines.'],
+      ['GLD','up','Gold is the geopolitical-risk hedge.'],
+      ['SPY','down','Broad risk can fade on escalation headlines.'],
+    ]},
+    { re:/bitcoin|crypto|btc|digital asset/i, picks:[
+      ['BTC','up','Crypto policy headlines usually hit Bitcoin first.'],
+      ['QQQ','up','Risk appetite can spill into growth tech.'],
+    ]},
+    { re:/fed|powell|rates|inflation|treasury|dollar|jobs|cpi/i, picks:[
+      ['TLT','mixed','Rates headlines usually show up quickly in long bonds.'],
+      ['UUP','mixed','Dollar is the cross-asset check for rate expectations.'],
+      ['SPY','mixed','Equities reprice through discount-rate expectations.'],
+      ['GLD','mixed','Gold reacts to real-rate and dollar moves.'],
+    ]},
+  ];
 
   // Account registry — add future accounts here
   const ALL_ACCOUNTS = [
@@ -619,6 +717,7 @@
   // ── STATE ──
   let posts=[], clsMap={}, sigMap={};
   let selectedId=null, tab='all', pendingNewIds=[];
+  let selectedMarketByPost={};
   let nextRefresh=null, refreshTimer=null, realtimeOk=false;
   const REFRESH_MS = 30000;
   const SESSION_START = Date.now();
@@ -748,6 +847,74 @@
   }
 
   // ── RENDER RIGHT PANEL ──
+  function marketInfo(symbol) {
+    const key = (symbol||'').toUpperCase();
+    return MARKET_INFO[key] || { name:key, bias:'Market' };
+  }
+
+  function uniqueMarkets(markets) {
+    const seen = new Set();
+    return markets.filter(m => {
+      const s = (m.symbol||'').toUpperCase();
+      if (!s || seen.has(s)) return false;
+      seen.add(s); m.symbol = s;
+      return true;
+    }).slice(0, 6);
+  }
+
+  function inferMarkets(post, cls, sig) {
+    if (sig) {
+      const symbol = (sig.instrument || 'SPY').toUpperCase();
+      const info = marketInfo(symbol);
+      return [{ symbol, direction:sig.direction === 'SELL' ? 'down' : 'up', source:'AI Signal', reason:`Trade signal: ${sig.direction} ${symbol}.`, name:info.name }];
+    }
+
+    const markets = [];
+    const instruments = cls?.instruments || cls?.tickers || [];
+    for (const inst of instruments) {
+      const symbol = (inst||'').toUpperCase();
+      const info = marketInfo(symbol);
+      markets.push({ symbol, direction:(cls?.direction === 'SELL' ? 'down' : cls?.direction === 'BUY' ? 'up' : 'mixed'), source:'AI Classification', reason:cls?.reasoning || `${symbol} was identified by the classifier.`, name:info.name });
+    }
+
+    const text = `${post?.content || ''} ${cls?.category || ''}`;
+    for (const rule of MARKET_RULES) {
+      if (rule.re.test(text)) {
+        for (const [symbol, direction, reason] of rule.picks) {
+          const info = marketInfo(symbol);
+          markets.push({ symbol, direction, source:'Market Lens', reason, name:info.name });
+        }
+      }
+    }
+
+    const tickers = (text.match(/\b[A-Z]{2,5}\b/g) || []).filter(t => MARKET_INFO[t] || TV_MAP[t]);
+    for (const symbol of tickers) {
+      const info = marketInfo(symbol);
+      markets.push({ symbol, direction:'mixed', source:'Ticker Mention', reason:`${symbol} appears in the post text.`, name:info.name });
+    }
+
+    if (!markets.length) {
+      markets.push(
+        { symbol:'SPY', direction:'mixed', source:'Default Lens', reason:'No direct trade signal yet. SPY is the broad market baseline while the classifier waits for a clear catalyst.', name:marketInfo('SPY').name },
+        { symbol:'QQQ', direction:'mixed', source:'Default Lens', reason:'QQQ shows whether the market is treating the post as a growth-risk headline.', name:marketInfo('QQQ').name },
+        { symbol:'GLD', direction:'mixed', source:'Default Lens', reason:'Gold is useful when a political post becomes a risk-off event.', name:marketInfo('GLD').name }
+      );
+    }
+
+    return uniqueMarkets(markets);
+  }
+
+  function biasLabel(direction) {
+    if (direction === 'up') return { cls:'up', text:'Watch upside' };
+    if (direction === 'down') return { cls:'down', text:'Watch downside' };
+    return { cls:'', text:'Watch reaction' };
+  }
+
+  function setMarket(id, symbol) {
+    selectedMarketByPost[id] = symbol;
+    renderRightPanel(id);
+  }
+
   function renderRightPanel(id) {
     const emptyEl = document.getElementById('rp-empty');
     const tradeEl = document.getElementById('rp-trade');
@@ -833,6 +1000,130 @@
       largeChartUrl:'https://www.tradingview.com/chart/?symbol='+encodeURIComponent(sym),
     });
     outer.appendChild(inner); outer.appendChild(s); wrap.appendChild(outer);
+  }
+
+  function renderRightPanel(id) {
+    const emptyEl = document.getElementById('rp-empty');
+    const tradeEl = document.getElementById('rp-trade');
+    if (!id) { emptyEl.style.display='flex'; tradeEl.style.display='none'; return; }
+
+    const post = posts.find(p=>p.post_id===id);
+    const cls  = clsMap[id];
+    const sig  = sigMap[id]?.[0];
+    const author = post ? getPostAuthor(post) : ALL_ACCOUNTS[0];
+    const markets = inferMarkets(post, cls, sig);
+    const activeSymbol = selectedMarketByPost[id] || markets[0]?.symbol || 'SPY';
+    const active = markets.find(m => m.symbol === activeSymbol) || markets[0];
+    const activeInfo = marketInfo(active.symbol);
+    const bias = biasLabel(active.direction);
+    const postedAt = post?.posted_at || post?.created_at;
+    const exactTime = postedAt ? new Date(postedAt).toLocaleString(undefined, {
+      year:'numeric', month:'short', day:'2-digit',
+      hour:'2-digit', minute:'2-digit', second:'2-digit',
+      timeZoneName:'short'
+    }) : 'No timestamp';
+
+    emptyEl.style.display='none';
+    tradeEl.style.display='block';
+
+    const outcome = sig?.outcome || 'OPEN';
+    const badge = sig ? ({
+      OPEN:'<span class="outcome-badge ob-open">Trade Open</span>',
+      TARGET_HIT:'<span class="outcome-badge ob-target">Target Hit</span>',
+      STOP_HIT:'<span class="outcome-badge ob-stop">Stop Hit</span>',
+      TIME_STOP:'<span class="outcome-badge ob-time">Time Stop</span>',
+    }[outcome]||'') : '';
+    const pnl = sig?.pnl_pct;
+    const pnlBlock = sig && pnl!=null ? `
+      <div class="pnl-card">
+        <div><div class="pnl-label">Hypothetical P&L</div>
+          <div class="pnl-number ${pnl>=0?'pnl-pos':'pnl-neg'}">${pnl>=0?'+':''}${pnl.toFixed(2)}%</div></div>
+        <div style="font-size:20px;font-weight:800">${pnl>=0?'UP':'DOWN'}</div>
+      </div>` : '';
+    const details = sig ? `
+      <div class="levels-card">
+        <div class="levels-head">Trading Details</div>
+        <div class="levels-grid">
+          <div class="level-cell"><div class="lc-lbl">Entry</div><div class="lc-val lc-entry">${fmtP(sig.entry_price)}</div></div>
+          <div class="level-cell"><div class="lc-lbl">${sig.direction==='BUY'?'Stop down':'Stop up'}</div><div class="lc-val lc-stop">${fmtP(sig.stop_price)}</div></div>
+          <div class="level-cell"><div class="lc-lbl">${sig.direction==='BUY'?'Target up':'Target down'}</div><div class="lc-val lc-tgt">${fmtP(sig.target_price)}</div></div>
+        </div>
+      </div>` : `
+      <div class="impact-empty">
+        No trade signal has fired yet. This view shows the most relevant market lens and live candlestick chart while the AI waits for a high-confidence trade setup.
+      </div>`;
+
+    tradeEl.innerHTML = `
+      <div class="market-head">
+        <div class="mh-kicker">
+          <span>${esc(active.source)}</span>
+          <span class="mh-time">${esc(exactTime)}</span>
+        </div>
+        <div class="mh-row">
+          <div>
+            <div class="mh-symbol">${esc(active.symbol)}</div>
+            <div class="mh-name">${esc(activeInfo.name || active.name || '')}</div>
+          </div>
+          <span class="mh-bias ${bias.cls}">${bias.text}</span>
+        </div>
+        <div class="mh-thesis">${esc(active.reason || 'Watch the market response to this post.')}</div>
+        <div class="mh-meta">
+          <span class="pill pill-conf">Tweet: ${esc(exactTime)}</span>
+          ${cls?.category?`<span class="pill pill-none">${esc(cls.category)}</span>`:''}
+          ${cls?.confidence?`<span class="pill pill-conf">${Math.round(cls.confidence*100)}% confidence</span>`:''}
+          ${sig?`<span class="pill ${sig.direction==='BUY'?'pill-buy':'pill-sell'}">${esc(sig.direction)} signal</span>`:''}
+        </div>
+      </div>
+      <div class="chart-embed market-chart" id="chart-embed"></div>
+      <div class="market-tabs">
+        ${markets.map(m => `<button class="market-tab ${m.symbol===active.symbol?'active':''}" onclick="setMarket('${esc(id)}','${esc(m.symbol)}')">
+          <span class="mt-symbol">${esc(m.symbol)}</span>
+          <span class="mt-name">${esc(marketInfo(m.symbol).name || m.name || '')}</span>
+        </button>`).join('')}
+      </div>
+      ${badge}${pnlBlock}${details}
+      <div class="compact-post">
+        <div class="cp-label">${esc(author.name)}${author.handle ? ' · '+esc(author.handle) : ''}</div>
+        <div class="cp-text">${esc(post?.content||'')}</div>
+        ${cls?.reasoning?`<div class="pe-reasoning">${esc(cls.reasoning)}</div>`:''}
+      </div>
+      <button class="btn-full" onclick="window.open('${tvUrl(active.symbol)}','_blank')">Open Full Chart</button>`;
+
+    renderChart(tvSym(active.symbol));
+  }
+
+  function renderChart(sym) {
+    const wrap = document.getElementById('chart-embed');
+    if (!wrap) return;
+    wrap.innerHTML='';
+    const theme = document.documentElement.getAttribute('data-theme')||'dark';
+    const outer=document.createElement('div');
+    outer.className='tradingview-widget-container';
+    outer.style.cssText='height:360px;width:100%';
+    const inner=document.createElement('div');
+    inner.className='tradingview-widget-container__widget';
+    inner.style.cssText='height:360px;width:100%';
+    const s=document.createElement('script');
+    s.src='https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
+    s.async=true;
+    s.innerHTML=JSON.stringify({
+      autosize:true,
+      symbol:sym,
+      interval:'5',
+      timezone:'Etc/UTC',
+      theme:theme,
+      style:'2',
+      locale:'en',
+      enable_publishing:false,
+      hide_top_toolbar:false,
+      hide_side_toolbar:false,
+      allow_symbol_change:false,
+      calendar:false,
+      support_host:'https://www.tradingview.com'
+    });
+    outer.appendChild(inner);
+    outer.appendChild(s);
+    wrap.appendChild(outer);
   }
 
   // ── FOLLOWING PAGE ──
